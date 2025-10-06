@@ -1,0 +1,63 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    padding: 40px;
+}
+h1, h2 {
+    text-align: center;
+}
+form {
+    background: #fff;
+    padding: 20px;
+    margin: 0 auto 30px auto;
+    width: 320px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+label {
+    margin-top: 10px;
+    font-weight: bold;
+}
+input {
+    width: 95%;
+    padding: 8px;
+    margin-bottom: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+button {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 16px;
+}
+button:hover {
+    background: #0056b3;
+}
+#resultado {
+    margin-top: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+#tablaClientes {
+    margin: 0 auto;
+    margin-top: 20px;
+    width: 80%;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+#tablaClientes th, #tablaClientes td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+#tablaClientes th {
+    background-color: #007bff;
+    color: #fff;
+}
