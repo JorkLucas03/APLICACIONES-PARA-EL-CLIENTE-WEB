@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Operaciones con Bucle</title>
+</head>
+<body>
+  <h2>Operaciones con dos números</h2>
+
+  <label>Ingrese el primer número:</label>
+  <input type="number" id="num1"><br><br>
+
+  <label>Ingrese el segundo número:</label>
+  <input type="number" id="num2"><br><br>
+
+  <button onclick="calcular()">Calcular</button>
+
+  <h3>Resultados:</h3>
+  <div id="resultados"></div>
+
+  <script>
+    function calcular() {
+      let n1 = parseFloat(document.getElementById("num1").value);
+      let n2 = parseFloat(document.getElementById("num2").value);
+      let salida = "";
+      
+      for (let i = 1; i <= 5; i++) {
+        if (i === 1) salida += "1️⃣ Suma: " + (n1 + n2) + "<br>";
+        else if (i === 2) salida += "2️⃣ Resta: " + (n1 - n2) + "<br>";
+        else if (i === 3) salida += "3️⃣ Multiplicación: " + (n1 * n2) + "<br>";
+        else if (i === 4) salida += "4️⃣ División: " + (n1 / n2) + "<br>";
+        else if (i === 5) salida += "5️⃣ Módulo (%): " + (n1 % n2) + "<br>";
+      }
+      
+      document.getElementById("resultados").innerHTML = salida;
+    }
+  </script>
+</body>
+</html>
