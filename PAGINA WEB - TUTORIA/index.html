@@ -1,0 +1,3068 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Tutorías</title>
+    
+    <!-- ============================================ -->
+    <!-- LIBRERÍAS EXTERNAS (CDN)                     -->
+    <!-- jsPDF: Generación de archivos PDF            -->
+    <!-- jsPDF-AutoTable: Tablas en PDF               -->
+    <!-- XLSX: Exportación a Excel                    -->
+    <!-- ============================================ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- ============================================ -->
+    <!-- INICIO DE LA SECCIÓN CSS                     -->
+    <!-- Estilos completos del sistema (líneas 17-250)-->
+    <!-- Incluye: diseño, formularios, dashboard,     -->
+    <!-- modales, animaciones y responsive            -->
+    <!-- ============================================ -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #d0d0d0 0%, #b0b0b0 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin: 20px;
+        }
+
+        /* Container expandido para dashboard */
+        .container.dashboard-activo {
+            max-width: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        h1 {
+            color: #e31e24;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            max-width: 200px;
+            height: auto;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #75b532;
+            font-weight: bold;
+            margin-bottom: 30px;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #e31e24;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #e31e24 0%, #c41e24 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #c41e24 0%, #a01820 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(227, 30, 36, 0.3);
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .link a {
+            color: #e31e24;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .link a:hover {
+            text-decoration: underline;
+            color: #75b532;
+        }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e31e24;
+        }
+
+        .modal-header h3 {
+            color: #e31e24;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+            line-height: 1;
+            padding: 0;
+            width: auto;
+            margin: 0;
+        }
+
+        .modal-close:hover {
+            color: #e31e24;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .btn-secondary {
+            background: #6c757d !important;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268 !important;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Ocultar selectores de mes/año en los input type="date" */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            /* Mantener el ícono del calendario */
+        }
+        
+        input[type="date"]::-webkit-datetime-edit-month-field:focus,
+        input[type="date"]::-webkit-datetime-edit-year-field:focus {
+            background-color: transparent;
+        }
+    </style>
+    <!-- ============================================ -->
+    <!-- FIN DE LA SECCIÓN CSS                        -->
+    <!-- ============================================ -->
+</head>
+<body>
+    <!-- ============================================ -->
+    <!-- INICIO DE LA SECCIÓN HTML                    -->
+    <!-- Estructura completa del sistema              -->
+    <!-- (líneas 251-950 aprox.)                      -->
+    <!-- Incluye: formularios de login/registro,      -->
+    <!-- dashboards (coordinador, tutor, alumno),     -->
+    <!-- modales de edición                           -->
+    <!-- ============================================ -->
+    <div class="container">
+        <div id="message" class="message"></div>
+
+        <!-- FORMULARIO DE REGISTRO -->
+        <div id="registerSection">
+            <div class="logo">
+                <img src="img/logo-uleam.png" alt="ULEAM Logo" onerror="this.src='https://www.uleam.edu.ec/wp-content/uploads/2023/05/logo-uleam.png'">
+            </div>
+            <h1>Sistema de Tutorías</h1>
+            <p class="subtitle">Universidad Laica Eloy Alfaro de Manabí</p>
+            
+            <h2 style="text-align: center; margin-bottom: 20px;">Registro de Alumno</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Nombre Completo:</label>
+                    <input type="text" id="regName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email ULEAM:</label>
+                    <input type="email" id="regEmail" placeholder="e1316890498@live.uleam.edu.ec" required>
+                </div>
+                <div class="form-group">
+                    <label>Carrera:</label>
+                    <select id="regCarrera" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                        <option value="">-- Selecciona tu carrera --</option>
+                        <option value="Ingeniería en TIC">Ingeniería en TIC</option>
+                        <option value="Ingeniería en Software">Ingeniería en Software</option>
+                        <option value="Ingeniería en Sistemas">Ingeniería en Sistemas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Curso/Semestre:</label>
+                    <select id="regCurso" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                        <option value="">-- Selecciona --</option>
+                        <option value="1">Primer Semestre</option>
+                        <option value="2">Segundo Semestre</option>
+                        <option value="3">Tercer Semestre</option>
+                        <option value="4">Cuarto Semestre</option>
+                        <option value="5">Quinto Semestre</option>
+                        <option value="6">Sexto Semestre</option>
+                        <option value="7">Séptimo Semestre</option>
+                        <option value="8">Octavo Semestre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Paralelo:</label>
+                    <select id="regParalelo" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                        <option value="">-- Selecciona --</option>
+                        <option value="A">Paralelo A</option>
+                        <option value="B">Paralelo B</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="regPassword" required>
+                </div>
+                <button type="submit">Registrarse</button>
+            </form>
+            <div class="link">
+                <a href="#" onclick="mostrarLogin(); return false;">Ya tengo cuenta - Iniciar Sesión</a>
+            </div>
+        </div>
+
+        <!-- FORMULARIO DE LOGIN -->
+        <div id="loginSection" style="display: none;">
+            <div class="logo">
+                <img src="img/logo-uleam.png" alt="ULEAM Logo" onerror="this.src='https://www.uleam.edu.ec/wp-content/uploads/2023/05/logo-uleam.png'">
+            </div>
+            <h1>Sistema de Tutorías</h1>
+            <p class="subtitle">Universidad Laica Eloy Alfaro de Manabí</p>
+            
+            <h2 style="text-align: center; margin-bottom: 20px;">Iniciar Sesión</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="loginEmail" placeholder="e1316890498@live.uleam.edu.ec" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit">Ingresar</button>
+            </form>
+            <div class="link">
+                <a href="#" onclick="mostrarRegistro(); return false;">No tengo cuenta - Registrarse</a>
+            </div>
+        </div>
+
+        <!-- DASHBOARD HORIZONTAL -->
+        <div id="dashboardSection" style="display: none;">
+            <!-- HEADER FIJO SUPERIOR -->
+            <div style="position: fixed; top: 0; left: 0; right: 0; height: 60px; background: linear-gradient(90deg, #e31e24 0%, #1a1a1a 100%); box-shadow: 0 2px 10px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; z-index: 1000;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 24px;">🎓</span>
+                    <h2 style="color: white; margin: 0; font-size: 18px; font-weight: 600;">Sistema de Tutorías ULEAM</h2>
+                </div>
+                <div>
+                    <img src="img/logo-uleam.png" alt="ULEAM Logo" style="height: 45px; width: auto;" onerror="this.src='https://www.uleam.edu.ec/wp-content/uploads/2023/05/logo-uleam.png'">
+                </div>
+            </div>
+            
+            <!-- CONTENEDOR PRINCIPAL (debajo del header) -->
+            <div style="display: flex; min-height: 100vh; margin-top: 60px;">
+                
+                <!-- SIDEBAR IZQUIERDA - Información del Usuario -->
+                <div style="width: 200px; background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%); padding: 20px 15px; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; position: sticky; top: 60px; height: calc(100vh - 60px); overflow-y: auto;">
+                    <!-- Encabezado con avatar -->
+                    <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.1);">
+                        <div style="width: 60px; height: 60px; background: white; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                            <span style="font-size: 32px; color: #1a1a1a;">●</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Info del Usuario -->
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);">
+                        <p style="color: rgba(255,255,255,0.7); font-size: 10px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Bienvenido</p>
+                        <p style="color: white; font-size: 14px; font-weight: 600; margin-bottom: 10px; word-break: break-word;" id="userName"></p>
+                        
+                        <p style="color: rgba(255,255,255,0.7); font-size: 9px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Email</p>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 11px; margin-bottom: 10px; word-break: break-word;" id="userEmail"></p>
+                        
+                        <div style="display: inline-block; background: #75b532; color: white; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-top: 6px;">
+                            <span id="userRol"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de Acción -->
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                        <button onclick="mostrarPerfil()" style="background: linear-gradient(135deg, #75b532 0%, #5a9428 100%); color: white; border: none; padding: 10px 8px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; justify-content: center; transition: all 0.3s; box-shadow: 0 4px 10px rgba(117, 181, 50, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(117, 181, 50, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(117, 181, 50, 0.3)'">
+                            <span style="font-size: 16px;">▪</span> Mi Perfil
+                        </button>
+                        <button onclick="cerrarSesion()" style="background: linear-gradient(135deg, #e31e24 0%, #b91820 100%); color: white; border: none; padding: 10px 8px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; justify-content: center; transition: all 0.3s; box-shadow: 0 4px 10px rgba(227, 30, 36, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(227, 30, 36, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(227, 30, 36, 0.3)'">
+                            <span style="font-size: 16px;">🚪</span> Cerrar Sesión
+                        </button>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="margin-top: auto; padding-top: 15px; border-top: 2px solid rgba(255,255,255,0.1);">
+                        <p style="color: rgba(255,255,255,0.5); font-size: 10px; text-align: center; margin: 0;">ULEAM © 2025</p>
+                        <p style="color: rgba(255,255,255,0.4); font-size: 9px; text-align: center; margin: 5px 0 0 0;">Sistema de Tutorías</p>
+                    </div>
+                </div>
+                
+                <!-- CONTENIDO PRINCIPAL - Derecha -->
+                <div style="flex: 1; padding: 30px; background: #f5f5f5; overflow-y: auto;">
+
+            <!-- SECCION DE PERFIL -->
+            <div id="perfilSection" style="display: none;">
+                <button onclick="ocultarPerfil()" style="background: #6c757d; padding: 10px 20px; width: auto; margin-bottom: 20px; font-size: 14px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.2s; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">← Volver</button>
+                
+                <div style="background: white; padding: 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <h3 style="color: #e31e24; margin-bottom: 25px; font-size: 24px; display: flex; align-items: center; gap: 10px;">Mi Perfil</h3>
+                    
+                    <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #75b532;">
+                        <p style="margin-bottom: 15px; font-size: 15px;"><strong style="color: #1a1a1a;">Nombre:</strong> <span id="perfilNombre" style="color: #666;"></span></p>
+                        <p style="margin-bottom: 15px; font-size: 15px;"><strong style="color: #1a1a1a;">Email:</strong> <span id="perfilEmail" style="color: #666;"></span></p>
+                        <p style="margin-bottom: 15px; font-size: 15px;"><strong style="color: #1a1a1a;">Rol:</strong> <span id="perfilRol" style="color: #666;"></span></p>
+                        
+                        <!-- Campos específicos para TUTOR -->
+                        <div id="perfilTutorInfo" style="display: none;">
+                            <p style="margin-bottom: 15px; font-size: 15px;"><strong style="color: #1a1a1a;">Materia/Especialidad:</strong> <span id="perfilMateria" style="color: #75b532; font-weight: 600;"></span></p>
+                            <p style="margin-bottom: 15px; font-size: 15px;"><strong style="color: #1a1a1a;">Carrera:</strong> <span id="perfilCarreraTutor" style="color: #666;"></span></p>
+                            <p style="margin-bottom: 0; font-size: 15px;"><strong style="color: #1a1a1a;">Paralelo Asignado:</strong> <span id="perfilParaleloTutor" style="color: #666;"></span></p>
+                        </div>
+                        
+                        <!-- Campos específicos para ALUMNO -->
+                        <div id="perfilAlumnoInfo" style="display: none;">
+                            <p style="margin-bottom: 15px; font-size: 15px;"><strong style="color: #1a1a1a;">Carrera:</strong> <span id="perfilCarreraAlumno" style="color: #666;"></span></p>
+                            <p style="margin-bottom: 15px; font-size: 15px;"><strong style="color: #1a1a1a;">Curso/Semestre:</strong> <span id="perfilCurso" style="color: #666;"></span></p>
+                            <p style="margin-bottom: 0; font-size: 15px;"><strong style="color: #1a1a1a;">Paralelo:</strong> <span id="perfilParaleloAlumno" style="color: #666;"></span></p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; justify-content: center;">
+                        <button onclick="mostrarModalEditarPerfil()" style="background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%); color: #1a1a1a; border: none; padding: 12px 24px; font-size: 14px; border-radius: 8px; box-shadow: 0 4px 10px rgba(255, 193, 7, 0.3); transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255, 193, 7, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(255, 193, 7, 0.3)'">Editar Perfil</button>
+                        <button onclick="mostrarModalCambiarPassword()" style="background: linear-gradient(135deg, #e31e24 0%, #b91820 100%); color: white; border: none; padding: 12px 24px; font-size: 14px; border-radius: 8px; box-shadow: 0 4px 10px rgba(227, 30, 36, 0.3); transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(227, 30, 36, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(227, 30, 36, 0.3)'">Cambiar Contraseña</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL DE COORDINADOR -->
+            <div id="coordinadorPanel" style="display: none;">
+                <h3 style="margin-bottom: 20px; color: #1a1a1a; font-size: 26px; display: flex; align-items: center; gap: 10px;">Panel de Coordinador</h3>
+                
+                <!-- Todas las Tutorías -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <!-- Header con título y filtros en línea horizontal -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">
+                        <h4 style="margin: 0; white-space: nowrap; color: #1a1a1a; font-size: 20px; display: flex; align-items: center; gap: 8px;">Todas las Tutorías del Sistema</h4>
+                        
+                        <!-- Filtros compactos en línea -->
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="date" id="filtroFecha" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; transition: all 0.3s; font-family: inherit;" onfocus="this.style.borderColor='#75b532'; this.style.boxShadow='0 0 0 3px rgba(117, 181, 50, 0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                            <button onclick="filtrarPorFecha()" style="background: linear-gradient(135deg, #75b532 0%, #5a9428 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 5px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(117, 181, 50, 0.3); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(117, 181, 50, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(117, 181, 50, 0.3)'">
+                                🔍 Filtrar
+                            </button>
+                            <button onclick="limpiarFiltroFecha()" style="background: linear-gradient(135deg, #e31e24 0%, #b91820 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 5px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(227, 30, 36, 0.3); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(227, 30, 36, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(227, 30, 36, 0.3)'">
+                                ✖ Ver Todas
+                            </button>
+                        </div>
+                    </div>
+                    <div id="todasTutorias"></div>
+                </div>
+
+                <!-- Registrar Tutor -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <h4 style="color: #1a1a1a; font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;"><span style="font-size: 24px;">👨‍🏫</span> Registrar Nuevo Tutor</h4>
+                    <form id="registerTutorForm">
+                        <div class="form-group">
+                            <label>Nombre del Tutor:</label>
+                            <input type="text" id="tutorName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email ULEAM:</label>
+                            <input type="email" id="tutorEmail" placeholder="e1234567890@live.uleam.edu.ec" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Materia/Especialidad:</label>
+                            <input type="text" id="tutorMateria" placeholder="Ej: Matemáticas, Programación..." required>
+                        </div>
+                        <div class="form-group">
+                            <label>Carrera:</label>
+                            <select id="tutorCarrera" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                                <option value="">-- Selecciona la carrera --</option>
+                                <option value="Ingeniería en Tecnologías de la Información">Ingeniería en Tecnologías de la Información</option>
+                                <option value="Ingeniería en Software">Ingeniería en Software</option>
+                                <option value="Ingeniería en Sistemas">Ingeniería en Sistemas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Curso/Semestre que Imparte:</label>
+                            <select id="tutorCurso" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                                <option value="">-- Selecciona el curso --</option>
+                                <option value="1">1° Semestre</option>
+                                <option value="2">2° Semestre</option>
+                                <option value="3">3° Semestre</option>
+                                <option value="4">4° Semestre</option>
+                                <option value="5">5° Semestre</option>
+                                <option value="6">6° Semestre</option>
+                                <option value="7">7° Semestre</option>
+                                <option value="8">8° Semestre</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Paralelo Asignado:</label>
+                            <select id="tutorParalelo" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                                <option value="">-- Selecciona el paralelo --</option>
+                                <option value="A">Paralelo A (Mañana: 7 AM - 1 PM)</option>
+                                <option value="B">Paralelo B (Tarde: 2 PM - 8 PM)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Horario de Clases:</label>
+                            <input type="text" id="tutorHorario" placeholder="Ej: Lunes a Viernes 8:00-10:00" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña inicial:</label>
+                            <input type="password" id="tutorPassword" value="123456" required>
+                        </div>
+                        <button type="submit">Registrar Tutor</button>
+                    </form>
+                </div>
+
+                <!-- Lista de Tutores -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <h4 style="color: #1a1a1a; font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;"><span style="font-size: 24px;">👨‍🏫</span> Tutores Registrados</h4>
+                    <div id="listaTutores"></div>
+                </div>
+
+                <!-- Lista de Alumnos -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <h4 style="color: #1a1a1a; font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;"><span style="font-size: 24px;">👨‍🎓</span> Alumnos Registrados</h4>
+                    <div id="listaAlumnos"></div>
+                </div>
+
+                <!-- Sección de Reportes -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <h4 style="color: #1a1a1a; font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">
+                        Generación de Reportes
+                    </h4>
+                    
+                    <!-- Filtros para el Reporte -->
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h5 style="color: #1a1a1a; margin-bottom: 15px; font-size: 16px;">Filtros de Búsqueda</h5>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 13px;">Fecha Inicio:</label>
+                                <input type="date" id="reporteFechaInicio" style="padding: 8px; font-size: 14px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 13px;">Fecha Fin:</label>
+                                <input type="date" id="reporteFechaFin" style="padding: 8px; font-size: 14px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 13px;">Tutor:</label>
+                                <select id="reporteTutor" style="padding: 8px; font-size: 14px;">
+                                    <option value="">Todos los tutores</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 13px;">Estado:</label>
+                                <select id="reporteEstado" style="padding: 8px; font-size: 14px;">
+                                    <option value="">Todos los estados</option>
+                                    <option value="abierta">Abierta</option>
+                                    <option value="completada">Completada</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="confirmada">Confirmada</option>
+                                    <option value="rechazada">Rechazada</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button onclick="generarReporte()" style="background: linear-gradient(135deg, #75b532 0%, #5a9428 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; width: 100%;">
+                            Generar Reporte
+                        </button>
+                    </div>
+
+                    <!-- Vista Previa del Reporte -->
+                    <div id="vistaReporte" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 15px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #75b532;">
+                            <div>
+                                <p style="font-weight: 600; color: #1a1a1a; margin-bottom: 5px;">Reporte Generado</p>
+                                <p style="font-size: 14px; color: #666;"><span id="totalRegistros">0</span> registros encontrados</p>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="exportarPDF()" style="background: linear-gradient(135deg, #e31e24 0%, #b91820 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 10px rgba(227, 30, 36, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                    Exportar PDF
+                                </button>
+                                <button onclick="exportarExcel()" style="background: linear-gradient(135deg, #217346 0%, #1a5c37 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 10px rgba(33, 115, 70, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                    Exportar Excel
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de resultados -->
+                        <div style="overflow-x: auto;">
+                            <table id="tablaReporte" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <thead style="background: #1a1a1a; color: white;">
+                                    <tr>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Fecha</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Hora</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Tema</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Tutor</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Tipo</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Estudiantes</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaReporteCuerpo">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de Datos de Usuarios -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <h4 style="color: #1a1a1a; font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">
+                        Base de Datos de Usuarios
+                    </h4>
+                    
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+                            Visualiza y exporta la información completa de todos los usuarios registrados en el sistema (tutores y alumnos).
+                        </p>
+                        
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <button onclick="mostrarDatosUsuarios()" style="background: linear-gradient(135deg, #75b532 0%, #5a9428 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 10px rgba(117, 181, 50, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                Ver Datos
+                            </button>
+                            <button onclick="exportarDatosJSON()" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 10px rgba(26, 26, 26, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                Descargar JSON
+                            </button>
+                            <button onclick="exportarDatosCSV()" style="background: linear-gradient(135deg, #217346 0%, #1a5c37 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 10px rgba(33, 115, 70, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                Descargar CSV
+                            </button>
+                            <button onclick="ocultarDatosUsuarios()" style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                Ocultar
+                            </button>
+                        </div>
+
+                        <div style="background: #fff3cd; padding: 12px; border-radius: 5px; border-left: 4px solid #ffc107; font-size: 13px; color: #856404;">
+                            <strong>Nota:</strong> Los datos del coordinador no se muestran por seguridad. Solo se incluyen tutores y alumnos.
+                        </div>
+                    </div>
+
+                    <!-- Vista de datos de usuarios -->
+                    <div id="vistaDatosUsuarios" style="display: none;">
+                        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #75b532;">
+                            <p style="font-weight: 600; color: #1a1a1a; margin-bottom: 5px;">Datos Cargados</p>
+                            <p style="font-size: 14px; color: #666;">Total de usuarios: <strong id="totalUsuariosData">0</strong> (<span id="totalTutoresData">0</span> tutores, <span id="totalAlumnosData">0</span> alumnos)</p>
+                        </div>
+
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <thead style="background: #1a1a1a; color: white;">
+                                    <tr>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Nombre</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Email</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Contraseña</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Rol</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Carrera</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Curso</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Paralelo</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Materia</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaDatosUsuarios">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL DE TUTOR -->
+            <div id="tutorPanel" style="display: none;">
+                <h3 style="margin-bottom: 20px; color: #1a1a1a; font-size: 26px; display: flex; align-items: center; gap: 10px;">Panel de Tutor</h3>
+                
+                <!-- Crear Tutoría Grupal -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <h4 style="color: #1a1a1a; font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">👥 Crear Tutoría Grupal</h4>
+                    <form id="crearTutoriaGrupalForm">
+                        <div class="form-group">
+                            <label>Tema de la tutoría:</label>
+                            <input type="text" id="grupalTema" placeholder="Ej: Proyecto de grado" required>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Carrera:</label>
+                                <select id="grupalCarrera" required>
+                                    <option value="">-- Selecciona carrera --</option>
+                                    <option value="Ingeniería en Tecnologías de la Información">Ingeniería en Tecnologías de la Información</option>
+                                    <option value="Ingeniería en Software">Ingeniería en Software</option>
+                                    <option value="Ingeniería en Sistemas">Ingeniería en Sistemas</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Curso/Semestre:</label>
+                                <select id="grupalCurso" required>
+                                    <option value="">-- Selecciona --</option>
+                                    <option value="1">1° Semestre</option>
+                                    <option value="2">2° Semestre</option>
+                                    <option value="3">3° Semestre</option>
+                                    <option value="4">4° Semestre</option>
+                                    <option value="5">5° Semestre</option>
+                                    <option value="6">6° Semestre</option>
+                                    <option value="7">7° Semestre</option>
+                                    <option value="8">8° Semestre</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Paralelo:</label>
+                                <select id="grupalParalelo" required>
+                                    <option value="">-- Selecciona --</option>
+                                    <option value="A">Paralelo A (Mañana)</option>
+                                    <option value="B">Paralelo B (Tarde)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha:</label>
+                                <input type="date" id="grupalFecha" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Hora:</label>
+                                <input type="time" id="grupalHora" required onchange="mostrarEquivalenteHoraGrupal()">
+                            </div>
+                        </div>
+                        <div id="equivalenteHoraGrupal" style="margin-bottom: 15px; padding: 10px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 5px; display: none;">
+                            <small style="color: #2e7d32; font-weight: 600; font-size: 14px;"></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Observaciones:</label>
+                            <textarea id="grupalObservaciones" rows="2" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; resize: none;" placeholder="Opcional: información adicional"></textarea>
+                        </div>
+                        <button type="button" onclick="crearTutoriaGrupal()" style="background: linear-gradient(135deg, #75b532 0%, #5a9428 100%); color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%;">Crear Tutoría Grupal</button>
+                    </form>
+                </div>
+
+                <!-- Filtro de Fecha - Compacto y en línea -->
+                <div style="background: white; padding: 18px 25px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <span style="font-size: 18px;">📅</span>
+                    <input type="date" id="filtroFechaTutor" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; transition: all 0.3s; font-family: inherit;" onfocus="this.style.borderColor='#75b532'; this.style.boxShadow='0 0 0 3px rgba(117, 181, 50, 0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                    <button onclick="filtrarTutoriasTutorPorFecha()" style="background: linear-gradient(135deg, #75b532 0%, #5a9428 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 5px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(117, 181, 50, 0.3); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(117, 181, 50, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(117, 181, 50, 0.3)'">
+                        🔍 Filtrar
+                    </button>
+                    <button onclick="limpiarFiltroTutor()" style="background: linear-gradient(135deg, #e31e24 0%, #b91820 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 5px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(227, 30, 36, 0.3); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(227, 30, 36, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(227, 30, 36, 0.3)'">
+                        ✖ Ver Todas
+                    </button>
+                </div>
+
+                <!-- Mis Tutorías Grupales (Abiertas y Completadas) -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <h4 style="color: #1a1a1a; font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;"><span style="font-size: 24px;">👥</span> Mis Tutorías Grupales</h4>
+                    <div id="tutoriasGrupalesTutor"></div>
+                </div>
+            </div>
+
+            <!-- PANEL DE ALUMNO -->
+            <div id="alumnoPanel" style="display: none;">
+                <h3 style="margin-bottom: 20px; color: #1a1a1a; font-size: 26px; display: flex; align-items: center; gap: 10px;">Panel de Alumno</h3>
+                
+                <!-- Tutorías Grupales Disponibles -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <h4 style="color: #1a1a1a; font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">Tutorías Grupales Disponibles</h4>
+                    <div id="tutoriasDisponibles"></div>
+                </div>
+
+                <!-- Mis Tutorías -->
+                <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <!-- Header con título y filtros en línea horizontal -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">
+                        <h4 style="margin: 0; white-space: nowrap; color: #1a1a1a; font-size: 20px; display: flex; align-items: center; gap: 8px;"><span style="font-size: 24px;">📚</span> Mis Tutorías</h4>
+                        
+                        <!-- Filtros compactos en línea -->
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="date" id="filtroFechaAlumno" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; transition: all 0.3s; font-family: inherit;" onfocus="this.style.borderColor='#75b532'; this.style.boxShadow='0 0 0 3px rgba(117, 181, 50, 0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                            <button onclick="filtrarMisTutoriasPorFecha()" style="background: linear-gradient(135deg, #75b532 0%, #5a9428 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 5px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(117, 181, 50, 0.3); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(117, 181, 50, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(117, 181, 50, 0.3)'">
+                                🔍 Filtrar
+                            </button>
+                            <button onclick="limpiarFiltroAlumno()" style="background: linear-gradient(135deg, #e31e24 0%, #b91820 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 5px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(227, 30, 36, 0.3); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(227, 30, 36, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(227, 30, 36, 0.3)'">
+                                ✖ Ver Todas
+                            </button>
+                        </div>
+                    </div>
+                    <div id="misTutorias"></div>
+                </div>
+            </div>
+
+                </div><!-- Cierre contenido principal -->
+            </div><!-- Cierre flex container -->
+        </div><!-- Cierre dashboardSection -->
+    </div><!-- Cierre container -->
+
+    <!-- MODAL PARA EDITAR USUARIO -->
+    <div id="modalEditarUsuario" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Editar Usuario</h3>
+                <button class="modal-close" onclick="cerrarModal()">&times;</button>
+            </div>
+            <form id="formEditarUsuario">
+                <div class="form-group">
+                    <label>Nombre Completo:</label>
+                    <input type="text" id="editNombre" required>
+                </div>
+                <div class="form-group" id="editMateriaGroup" style="display: none;">
+                    <label>Materia/Especialidad:</label>
+                    <input type="text" id="editMateria">
+                </div>
+                <div class="form-group" id="editCarreraGroup" style="display: none;">
+                    <label>Carrera:</label>
+                    <select id="editCarrera" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                        <option value="">-- Selecciona --</option>
+                        <option value="Ingeniería en TIC">Ingeniería en TIC</option>
+                        <option value="Ingeniería en Software">Ingeniería en Software</option>
+                        <option value="Ingeniería en Sistemas">Ingeniería en Sistemas</option>
+                    </select>
+                </div>
+                <div class="form-group" id="editCursoGroup" style="display: none;">
+                    <label>Curso/Semestre:</label>
+                    <select id="editCurso" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                        <option value="">-- Selecciona --</option>
+                        <option value="1">Primer Semestre</option>
+                        <option value="2">Segundo Semestre</option>
+                        <option value="3">Tercer Semestre</option>
+                        <option value="4">Cuarto Semestre</option>
+                        <option value="5">Quinto Semestre</option>
+                        <option value="6">Sexto Semestre</option>
+                        <option value="7">Séptimo Semestre</option>
+                        <option value="8">Octavo Semestre</option>
+                    </select>
+                </div>
+                <div class="form-group" id="editParaleloGroup" style="display: none;">
+                    <label>Paralelo:</label>
+                    <select id="editParalelo" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                        <option value="">-- Selecciona --</option>
+                        <option value="A">Paralelo A</option>
+                        <option value="B">Paralelo B</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nueva Contraseña (opcional):</label>
+                    <input type="password" id="editPassword" placeholder="Dejar vacío para no cambiar">
+                </div>
+                <input type="hidden" id="editEmail">
+                <div class="modal-buttons">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PARA RECHAZAR TUTORÍA -->
+    <div id="modalRechazar" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>❌ Rechazar Tutoría</h3>
+                <button class="modal-close" onclick="cerrarModalRechazo()">&times;</button>
+            </div>
+            <form id="formRechazar">
+                <div class="form-group">
+                    <label>Motivo del rechazo:</label>
+                    <textarea id="motivoRechazo" rows="4" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; resize: none;" required placeholder="Indica por qué no puedes dar esta tutoría..."></textarea>
+                </div>
+                <input type="hidden" id="tutoriaIdRechazo">
+                <div class="modal-buttons">
+                    <button type="button" class="btn-secondary" onclick="cerrarModalRechazo()">Cancelar</button>
+                    <button type="submit">Confirmar Rechazo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PARA EDITAR PERFIL -->
+    <div id="modalEditarPerfil" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Editar Mi Perfil</h3>
+                <button class="modal-close" onclick="cerrarModalEditarPerfil()">&times;</button>
+            </div>
+            <form id="formEditarPerfil">
+                <div class="form-group">
+                    <label>Nombre Completo:</label>
+                    <input type="text" id="editPerfilNombre" required>
+                </div>
+                <div class="form-group" id="editPerfilMateriaGroup" style="display: none;">
+                    <label>Materia/Especialidad:</label>
+                    <input type="text" id="editPerfilMateria">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-secondary" onclick="cerrarModalEditarPerfil()">Cancelar</button>
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PARA CAMBIAR CONTRASEÑA -->
+    <div id="modalCambiarPassword" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔒 Cambiar Contraseña</h3>
+                <button class="modal-close" onclick="cerrarModalCambiarPassword()">&times;</button>
+            </div>
+            <div id="mensajePassword" style="display: none; padding: 12px; margin-bottom: 15px; border-radius: 5px; text-align: center; font-weight: 500;"></div>
+            <form id="formCambiarPassword">
+                <div class="form-group">
+                    <label>Contraseña Actual:</label>
+                    <input type="password" id="passwordActual" required>
+                </div>
+                <div class="form-group">
+                    <label>Nueva Contraseña:</label>
+                    <input type="password" id="passwordNueva" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Nueva Contraseña:</label>
+                    <input type="password" id="passwordConfirmar" required minlength="6">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-secondary" onclick="cerrarModalCambiarPassword()">Cancelar</button>
+                    <button type="submit">Cambiar Contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PARA CANCELAR TUTORÍA -->
+    <div id="modalCancelarTutoria" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #e31e24 0%, #b91820 100%); color: white;">
+                <h3>❌ Cancelar Tutoría Grupal</h3>
+                <button class="modal-close" onclick="cerrarModalCancelar()" style="color: white; background: rgba(255,255,255,0.2);">&times;</button>
+            </div>
+            <form id="formCancelarTutoria" onsubmit="confirmarCancelacion(event)">
+                <div class="form-group">
+                    <label style="font-weight: 600; color: #1a1a1a;">¿Por qué motivo debes cancelar esta tutoría?</label>
+                    <p style="font-size: 13px; color: #666; margin: 5px 0 10px 0;">Este mensaje será visible para todos los estudiantes inscritos</p>
+                    <textarea id="motivoCancelacion" required minlength="10" rows="4" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical;" placeholder="Ejemplo: Por motivos de salud no podré asistir. Disculpen las molestias."></textarea>
+                    <small style="color: #999; font-size: 12px;">Mínimo 10 caracteres</small>
+                </div>
+                <input type="hidden" id="tutoriaIdCancelar">
+                <div class="modal-buttons" style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn-secondary" onclick="cerrarModalCancelar()" style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Volver</button>
+                    <button type="submit" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #e31e24 0%, #b91820 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Confirmar Cancelación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- FIN DE LA SECCIÓN HTML                       -->
+    <!-- ============================================ -->
+
+    <!-- ============================================ -->
+    <!-- INICIO DE LA SECCIÓN JAVASCRIPT              -->
+    <!-- Lógica completa del sistema                  -->
+    <!-- (líneas 950-2973 aprox.)                     -->
+    <!-- ============================================ -->
+    <!-- Contenido del JavaScript:                    -->
+    <!--                                              -->
+    <!-- 1. FUNCIONES AUXILIARES (líneas 955-1030)   -->
+    <!--    - mostrarMensaje()                        -->
+    <!--    - validarEmailUleam()                     -->
+    <!--    - mostrarEquivalenteHora()                -->
+    <!--    - navegación (mostrarLogin, etc.)         -->
+    <!--                                              -->
+    <!-- 2. AUTENTICACIÓN (líneas 1030-1150)         -->
+    <!--    - Registro de alumnos                     -->
+    <!--    - Login de usuarios                       -->
+    <!--    - mostrarDashboard()                      -->
+    <!--    - cerrarSesion()                          -->
+    <!--                                              -->
+    <!-- 3. GESTIÓN DE USUARIOS (líneas 1150-1450)   -->
+    <!--    - Registrar tutores (coordinador)         -->
+    <!--    - Editar usuarios                         -->
+    <!--    - Eliminar usuarios                       -->
+    <!--    - Listar tutores y alumnos                -->
+    <!--    - Exportar datos (JSON/CSV)               -->
+    <!--                                              -->
+    <!-- 4. GESTIÓN DE TUTORÍAS (líneas 1450-2200)   -->
+    <!--    - Solicitar tutoría individual            -->
+    <!--    - Crear tutoría grupal                    -->
+    <!--    - Confirmar/Rechazar tutorías             -->
+    <!--    - Inscripción en tutorías grupales        -->
+    <!--    - Completar tutorías                      -->
+    <!--    - Control de asistencia                   -->
+    <!--                                              -->
+    <!-- 5. REPORTES (líneas 2200-2450)              -->
+    <!--    - Generar reportes filtrados              -->
+    <!--    - Exportar a PDF (jsPDF)                  -->
+    <!--    - Exportar a Excel (XLSX)                 -->
+    <!--                                              -->
+    <!-- 6. PERFIL DE USUARIO (líneas 2450-2700)     -->
+    <!--    - Mostrar perfil                          -->
+    <!--    - Editar perfil                           -->
+    <!--    - Cambiar contraseña                      -->
+    <!--                                              -->
+    <!-- 7. RENDERIZADO DE DASHBOARDS (2700-2950)    -->
+    <!--    - cargarMisTutorias() [Alumno]            -->
+    <!--    - cargarTutoriasTutor() [Tutor]           -->
+    <!--    - cargarTutoriasDisponibles() [Alumno]    -->
+    <!--    - cargarTodasTutorias() [Coordinador]     -->
+    <!--                                              -->
+    <!-- 8. INICIALIZACIÓN (líneas 2950-2973)        -->
+    <!--    - window.onload                           -->
+    <!--    - Crear coordinador por defecto           -->
+    <!--    - Verificar sesión activa                 -->
+    <!-- ============================================ -->
+    <script>
+        // ============================================
+        // SECCIÓN 1: FUNCIONES AUXILIARES Y UTILIDADES
+        // ============================================
+        
+        // ===== FUNCIONES SIMPLES =====
+
+        function mostrarMensaje(texto, tipo) {
+            const msg = document.getElementById('message');
+            msg.textContent = texto;
+            msg.className = 'message ' + tipo;
+            msg.style.display = 'block';
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 3000);
+        }
+
+        // Función para mostrar equivalente de hora 24h a 12h (AM/PM)
+        function mostrarEquivalenteHora() {
+            const inputHora = document.getElementById('tutoriaHora').value;
+            const equivalenteDiv = document.getElementById('equivalenteHora');
+            
+            if (!inputHora) {
+                equivalenteDiv.style.display = 'none';
+                return;
+            }
+            
+            const [hora, minutos] = inputHora.split(':');
+            const horaNum = parseInt(hora);
+            
+            let hora12, periodo, momento;
+            
+            // Convertir a formato 12h
+            if (horaNum === 0) {
+                hora12 = 12;
+                periodo = 'AM';
+                momento = '🌙 Medianoche';
+            } else if (horaNum < 12) {
+                hora12 = horaNum;
+                periodo = 'AM';
+                momento = '🌅 Mañana';
+            } else if (horaNum === 12) {
+                hora12 = 12;
+                periodo = 'PM';
+                momento = '☀️ Mediodía';
+            } else {
+                hora12 = horaNum - 12;
+                periodo = 'PM';
+                if (horaNum < 19) {
+                    momento = '🌤️ Tarde';
+                } else {
+                    momento = '🌙 Noche';
+                }
+            }
+            
+            // Validar según paralelo del alumno
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            let mensajeValidacion = '';
+            let estiloDiv = 'background: #e8f5e9; border-left: 4px solid #4caf50;';
+            
+            if (sesion && sesion.paralelo) {
+                if (sesion.paralelo === 'A') {
+                    // Paralelo A: 7 AM - 1 PM (07:00 - 13:00)
+                    if (horaNum < 7 || horaNum > 13) {
+                        mensajeValidacion = ' ⚠️ FUERA DE HORARIO - Paralelo A: 7 AM-1 PM';
+                        estiloDiv = 'background: #ffebee; border-left: 4px solid #f44336;';
+                    }
+                } else if (sesion.paralelo === 'B') {
+                    // Paralelo B: 2 PM - 8 PM (14:00 - 20:00)
+                    if (horaNum < 14 || horaNum > 20) {
+                        mensajeValidacion = ' ⚠️ FUERA DE HORARIO - Paralelo B: 2 PM-8 PM';
+                        estiloDiv = 'background: #ffebee; border-left: 4px solid #f44336;';
+                    }
+                }
+            }
+            
+            // Mostrar equivalente
+            equivalenteDiv.style = `margin-top: 8px; padding: 10px; ${estiloDiv} border-radius: 5px; display: block;`;
+            const colorTexto = mensajeValidacion ? '#c62828' : '#2e7d32';
+            equivalenteDiv.querySelector('small').style.color = colorTexto;
+            equivalenteDiv.querySelector('small').textContent = 
+                `✓ ${hora12}:${minutos} ${periodo} (${momento})${mensajeValidacion}`;
+        }
+
+        function mostrarLogin() {
+            document.getElementById('registerSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+        }
+
+        function mostrarRegistro() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('registerSection').style.display = 'block';
+        }
+
+        function validarEmailUleam(email) {
+            return email.endsWith('@live.uleam.edu.ec');
+        }
+
+        // ============================================
+        // SECCIÓN 2: AUTENTICACIÓN (REGISTRO Y LOGIN)
+        // ============================================
+
+        // ===== REGISTRO =====
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const carrera = document.getElementById('regCarrera').value.trim();
+            const curso = document.getElementById('regCurso').value;
+            const paralelo = document.getElementById('regParalelo').value;
+            const password = document.getElementById('regPassword').value;
+
+            // Validar email ULEAM
+            if (!validarEmailUleam(email)) {
+                mostrarMensaje('❌ Debes usar un correo @live.uleam.edu.ec', 'error');
+                return;
+            }
+
+            // Obtener usuarios existentes
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+
+            // Verificar si ya existe
+            if (usuarios.find(u => u.email === email)) {
+                mostrarMensaje('❌ Este correo ya está registrado', 'error');
+                return;
+            }
+
+            // Agregar nuevo usuario como ALUMNO (por defecto)
+            usuarios.push({ 
+                nombre, 
+                email, 
+                password,
+                rol: 'alumno',  // Los que se registran solos son alumnos
+                carrera,
+                curso,
+                paralelo
+            });
+            localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+            mostrarMensaje('✅ Registro exitoso. Ahora puedes iniciar sesión', 'success');
+            
+            // Limpiar formulario y mostrar login
+            this.reset();
+            setTimeout(() => {
+                mostrarLogin();
+            }, 1500);
+        });
+
+        // ===== LOGIN =====
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            // Obtener usuarios
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+
+            // Verificar si el usuario existe
+            const usuarioExiste = usuarios.find(u => u.email === email);
+            
+            if (!usuarioExiste) {
+                mostrarMensaje('❌ Usuario no registrado. Por favor regístrate primero.', 'error');
+                return;
+            }
+
+            // Verificar contraseña
+            if (usuarioExiste.password !== password) {
+                mostrarMensaje('❌ Contraseña incorrecta. Inténtalo de nuevo.', 'error');
+                return;
+            }
+
+            // IMPORTANTE: Borrar sesión anterior antes de crear nueva
+            localStorage.removeItem('sesion');
+            
+            // Ocultar TODOS los paneles antes de iniciar nueva sesión
+            document.getElementById('coordinadorPanel').style.display = 'none';
+            document.getElementById('tutorPanel').style.display = 'none';
+            document.getElementById('alumnoPanel').style.display = 'none';
+            document.getElementById('perfilSection').style.display = 'none';
+
+            // Guardar NUEVA sesión
+            localStorage.setItem('sesion', JSON.stringify(usuarioExiste));
+
+            // Mostrar dashboard
+            mostrarDashboard(usuarioExiste);
+
+            mostrarMensaje('✅ Bienvenido ' + usuarioExiste.nombre, 'success');
+        });
+
+        // ===== MOSTRAR DASHBOARD SEGUN ROL =====
+        function mostrarDashboard(usuario) {
+            // VALIDACIÓN: Verificar datos frescos del usuario desde localStorage
+            const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            const usuarioFresco = usuarios.find(u => u.email === usuario.email);
+            
+            if (!usuarioFresco) {
+                mostrarMensaje('❌ Usuario no encontrado. Por favor inicia sesión nuevamente.', 'error');
+                cerrarSesion();
+                return;
+            }
+            
+            // Usar datos frescos (no los de parámetro que pueden estar desactualizados)
+            usuario = usuarioFresco;
+            
+            // Actualizar sesión con datos correctos
+            localStorage.setItem('sesion', JSON.stringify(usuario));
+            
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('registerSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            
+            // Expandir container para dashboard y ajustar body
+            document.querySelector('.container').classList.add('dashboard-activo');
+            document.body.style.padding = '0';
+            document.body.style.alignItems = 'stretch';
+            
+            document.getElementById('userName').textContent = usuario.nombre;
+            document.getElementById('userEmail').textContent = usuario.email;
+            document.getElementById('userRol').textContent = usuario.rol.toUpperCase();
+
+            // Ocultar todos los paneles
+            document.getElementById('coordinadorPanel').style.display = 'none';
+            document.getElementById('tutorPanel').style.display = 'none';
+            document.getElementById('alumnoPanel').style.display = 'none';
+
+            // Mostrar panel según rol
+            if (usuario.rol === 'coordinador') {
+                document.getElementById('coordinadorPanel').style.display = 'block';
+                cargarListaUsuarios();
+                cargarTodasTutorias();
+            } else if (usuario.rol === 'tutor') {
+                document.getElementById('tutorPanel').style.display = 'block';
+                cargarTutoriasTutor(usuario.email);
+                // Establecer fecha mínima en el formulario de crear tutoría grupal
+                const fechaGrupalInput = document.getElementById('grupalFecha');
+                const hoy = new Date();
+                const año = hoy.getFullYear();
+                const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                const dia = String(hoy.getDate()).padStart(2, '0');
+                fechaGrupalInput.min = `${año}-${mes}-${dia}`;
+            } else {
+                document.getElementById('alumnoPanel').style.display = 'block';
+                cargarTutoriasDisponibles(usuario.email);
+                cargarMisTutorias(usuario.email);
+            }
+        }
+
+        // ============================================
+        // SECCIÓN 3: GESTIÓN DE USUARIOS
+        // (Registrar tutores, editar, eliminar, listar)
+        // ============================================
+
+        // ===== REGISTRAR TUTOR (SOLO COORDINADOR) =====
+        document.getElementById('registerTutorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('tutorName').value.trim();
+            const email = document.getElementById('tutorEmail').value.trim();
+            const materia = document.getElementById('tutorMateria').value.trim();
+            const carrera = document.getElementById('tutorCarrera').value.trim();
+            const curso = document.getElementById('tutorCurso').value;
+            const paralelo = document.getElementById('tutorParalelo').value;
+            const horario = document.getElementById('tutorHorario').value.trim();
+            const password = document.getElementById('tutorPassword').value;
+
+            if (!validarEmailUleam(email)) {
+                mostrarMensaje('❌ Debes usar un correo @live.uleam.edu.ec', 'error');
+                return;
+            }
+
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+
+            if (usuarios.find(u => u.email === email)) {
+                mostrarMensaje('❌ Este correo ya está registrado', 'error');
+                return;
+            }
+
+            usuarios.push({
+                nombre,
+                email,
+                password,
+                rol: 'tutor',
+                materia: materia,
+                carrera: carrera,
+                curso: curso,
+                paralelo: paralelo,
+                horario: horario
+            });
+            localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+            mostrarMensaje('✅ Tutor registrado exitosamente', 'success');
+            this.reset();
+            document.getElementById('tutorPassword').value = '123456';
+            cargarListaUsuarios();
+        });
+
+        // ===== CARGAR LISTAS DE USUARIOS =====
+        function cargarListaUsuarios() {
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            
+            // Lista de tutores
+            const tutores = usuarios.filter(u => u.rol === 'tutor');
+            const listaTutores = document.getElementById('listaTutores');
+            if (tutores.length === 0) {
+                listaTutores.innerHTML = `<div style="text-align: center; padding: 30px 20px; background: #f9f9f9; border-radius: 8px;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">👨‍🏫</div>
+                    <p style="color: #666; font-size: 16px; margin-bottom: 8px; font-weight: 600;">No hay tutores registrados</p>
+                    <p style="color: #999; font-size: 14px;">Usa el formulario de arriba para registrar el primer tutor</p>
+                </div>`;
+            } else {
+                listaTutores.innerHTML = tutores.map(t => 
+                    `<div style="background: white; padding: 12px 15px; margin: 8px 0; border-radius: 8px; border-left: 3px solid #75b532; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: bold; font-size: 15px; color: #1a1a1a; margin-bottom: 4px;">${t.nombre}</div>
+                                <div style="font-size: 12px; color: #666; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.email}</div>
+                                <div style="font-size: 12px; color: #75b532; font-weight: 500;">📚 ${t.materia || 'No especificada'}</div>
+                                ${t.carrera ? `<div style="font-size: 12px; color: #555; font-weight: 500;">🎓 ${t.carrera}</div>` : ''}
+                                ${t.curso ? `<div style="font-size: 12px; color: #1a1a1a; font-weight: 500;">📖 ${t.curso}° Semestre</div>` : ''}
+                                ${t.paralelo ? `<div style="font-size: 12px; color: #1a1a1a; font-weight: 600; background: ${t.paralelo === 'A' ? '#fff3cd' : '#d1ecf1'}; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-top: 3px;">${t.paralelo === 'A' ? '🌅' : '🌆'} Paralelo ${t.paralelo} ${t.paralelo === 'A' ? '(Mañana)' : '(Tarde)'}</div>` : ''}
+                                ${t.horario ? `<div style="font-size: 12px; color: #666; margin-top: 4px;">⏰ ${t.horario}</div>` : ''}
+                            </div>
+                            <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                                <button onclick="editarUsuario('${t.email}')" style="background: #ffc107; color: #1a1a1a; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Editar usuario" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 3px 6px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">✏️</button>
+                                <button onclick="eliminarUsuario('${t.email}')" style="background: #e31e24; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Eliminar usuario" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 3px 6px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">🗑️</button>
+                            </div>
+                        </div>
+                    </div>`
+                ).join('');
+            }
+
+            // Lista de alumnos
+            const alumnos = usuarios.filter(u => u.rol === 'alumno');
+            const listaAlumnos = document.getElementById('listaAlumnos');
+            if (alumnos.length === 0) {
+                listaAlumnos.innerHTML = `<div style="text-align: center; padding: 30px 20px; background: #f9f9f9; border-radius: 8px;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">👨‍🎓</div>
+                    <p style="color: #666; font-size: 16px; margin-bottom: 8px; font-weight: 600;">No hay alumnos registrados</p>
+                    <p style="color: #999; font-size: 14px;">Los alumnos pueden auto-registrarse desde el login</p>
+                </div>`;
+            } else {
+                listaAlumnos.innerHTML = alumnos.map(a => 
+                    `<div style="background: white; padding: 12px 15px; margin: 8px 0; border-radius: 8px; border-left: 3px solid #1a1a1a; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: bold; font-size: 15px; color: #1a1a1a; margin-bottom: 4px;">${a.nombre}</div>
+                                <div style="font-size: 12px; color: #666; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${a.email}</div>
+                                ${a.carrera ? `<div style="font-size: 12px; color: #555; font-weight: 500;">🎓 ${a.carrera} | Curso: ${a.curso}° | Paralelo: ${a.paralelo}</div>` : ''}
+                            </div>
+                            <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                                <button onclick="editarUsuario('${a.email}')" style="background: #ffc107; color: #1a1a1a; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Editar usuario" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 3px 6px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">✏️</button>
+                                <button onclick="eliminarUsuario('${a.email}')" style="background: #e31e24; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Eliminar usuario" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 3px 6px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">🗑️</button>
+                            </div>
+                        </div>
+                    </div>`
+                ).join('');
+            }
+
+            // Cargar lista de tutores en el selector de reportes
+            const selectTutor = document.getElementById('reporteTutor');
+            if (selectTutor) {
+                selectTutor.innerHTML = '<option value="">Todos los tutores</option>' + 
+                    tutores.map(t => `<option value="${t.email}">${t.nombre}</option>`).join('');
+            }
+        }
+
+        // ============================================
+        // SECCIÓN 5: GENERACIÓN DE REPORTES
+        // (Filtrar datos, exportar a PDF y Excel)
+        // ============================================
+
+        // ===== VARIABLES GLOBALES PARA REPORTES =====
+        let datosReporteActual = [];
+
+        // ===== GENERAR REPORTE =====
+        function generarReporte() {
+            const fechaInicio = document.getElementById('reporteFechaInicio').value;
+            const fechaFin = document.getElementById('reporteFechaFin').value;
+            const tutorEmail = document.getElementById('reporteTutor').value;
+            const estado = document.getElementById('reporteEstado').value;
+
+            // Cargar tutorías individuales y grupales
+            let tutoriasIndividuales = JSON.parse(localStorage.getItem('tutorias') || '[]');
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+
+            // Convertir tutorías grupales a formato de reporte
+            const tutoriasGrupalesFormateadas = tutoriasGrupales.map(t => ({
+                fecha: t.fecha,
+                hora: t.hora,
+                tema: t.tema,
+                tutorNombre: t.tutorNombre,
+                tutorEmail: t.tutorEmail,
+                tipo: 'Grupal',
+                estudiantes: t.alumnos ? t.alumnos.length : 0,
+                nombresEstudiantes: t.alumnos ? t.alumnos.map(a => a.nombre).join(', ') : 'Sin inscritos',
+                estado: t.estado || 'abierta',
+                carrera: t.carrera,
+                curso: t.curso,
+                paralelo: t.paralelo,
+                materia: t.tutorMateria,
+                asistencias: t.alumnos ? t.alumnos.filter(a => a.asistencia).length : 0
+            }));
+
+            // Convertir tutorías individuales a formato de reporte
+            const tutoriasIndividualesFormateadas = tutoriasIndividuales.map(t => ({
+                fecha: t.fecha,
+                hora: t.hora,
+                tema: t.tema,
+                tutorNombre: t.tutorNombre,
+                tutorEmail: t.tutorEmail,
+                tipo: 'Individual',
+                estudiantes: 1,
+                nombresEstudiantes: t.alumnoNombre,
+                estado: t.estado || 'pendiente',
+                carrera: t.alumnoCarrera,
+                curso: t.alumnoCurso,
+                paralelo: t.alumnoParalelo,
+                asistencias: (t.asistenciaAlumno && t.asistenciaCoordinador) ? 1 : 0
+            }));
+
+            // Combinar ambas listas
+            let todasTutorias = [...tutoriasGrupalesFormateadas, ...tutoriasIndividualesFormateadas];
+
+            // Aplicar filtros
+            if (fechaInicio) {
+                todasTutorias = todasTutorias.filter(t => t.fecha >= fechaInicio);
+            }
+            if (fechaFin) {
+                todasTutorias = todasTutorias.filter(t => t.fecha <= fechaFin);
+            }
+            if (tutorEmail) {
+                todasTutorias = todasTutorias.filter(t => t.tutorEmail === tutorEmail);
+            }
+            if (estado) {
+                todasTutorias = todasTutorias.filter(t => t.estado === estado);
+            }
+
+            // Ordenar por fecha descendente
+            todasTutorias.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+            // Guardar datos para exportación
+            datosReporteActual = todasTutorias;
+
+            // Mostrar resultados
+            document.getElementById('totalRegistros').textContent = todasTutorias.length;
+            
+            const tbody = document.getElementById('tablaReporteCuerpo');
+            if (todasTutorias.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #666;">No se encontraron registros con los filtros aplicados</td></tr>';
+            } else {
+                tbody.innerHTML = todasTutorias.map((t, index) => {
+                    let estadoColor = '';
+                    let estadoBadge = '';
+                    
+                    if (t.estado === 'abierta') {
+                        estadoColor = '#75b532';
+                        estadoBadge = 'Abierta';
+                    } else if (t.estado === 'completada') {
+                        estadoColor = '#1a1a1a';
+                        estadoBadge = 'Completada';
+                    } else if (t.estado === 'pendiente') {
+                        estadoColor = '#ffc107';
+                        estadoBadge = 'Pendiente';
+                    } else if (t.estado === 'confirmada') {
+                        estadoColor = '#75b532';
+                        estadoBadge = 'Confirmada';
+                    } else if (t.estado === 'rechazada') {
+                        estadoColor = '#e31e24';
+                        estadoBadge = 'Rechazada';
+                    }
+
+                    const bgColor = index % 2 === 0 ? '#f9fafb' : 'white';
+                    
+                    return `
+                        <tr style="background: ${bgColor};">
+                            <td style="padding: 10px; border: 1px solid #ddd;">${t.fecha}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${t.hora}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${t.tema}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${t.tutorNombre}${t.materia ? ` - ${t.materia}` : ''}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;"><span style="background: ${t.tipo === 'Grupal' ? '#75b532' : '#1a1a1a'}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px;">${t.tipo}</span></td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${t.estudiantes} (${t.asistencias} ${t.asistencias === 1 ? 'asistió' : 'asistieron'})</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;"><span style="background: ${estadoColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px;">${estadoBadge}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('vistaReporte').style.display = 'block';
+        }
+
+        // ===== EXPORTAR A PDF =====
+        function exportarPDF() {
+            if (datosReporteActual.length === 0) {
+                mostrarMensaje('❌ No hay datos para exportar', 'error');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+
+            // Encabezado
+            doc.setFontSize(18);
+            doc.setTextColor(227, 30, 36);
+            doc.text('REPORTE DE TUTORÍAS - ULEAM', 148, 15, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 148, 22, { align: 'center' });
+            doc.text(`Total de registros: ${datosReporteActual.length}`, 148, 27, { align: 'center' });
+
+            // Preparar datos para la tabla
+            const headers = [['Fecha', 'Hora', 'Tema', 'Tutor', 'Tipo', 'Estudiantes', 'Asistencias', 'Estado']];
+            const data = datosReporteActual.map(t => [
+                t.fecha,
+                t.hora,
+                t.tema,
+                t.tutorNombre,
+                t.tipo,
+                t.estudiantes.toString(),
+                t.asistencias.toString(),
+                t.estado.charAt(0).toUpperCase() + t.estado.slice(1)
+            ]);
+
+            // Generar tabla
+            doc.autoTable({
+                head: headers,
+                body: data,
+                startY: 32,
+                styles: { fontSize: 8, cellPadding: 3 },
+                headStyles: { fillColor: [26, 26, 26], textColor: 255 },
+                alternateRowStyles: { fillColor: [249, 250, 251] },
+                margin: { left: 10, right: 10 }
+            });
+
+            // Pie de página
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(128);
+                doc.text(`Página ${i} de ${pageCount}`, 148, 200, { align: 'center' });
+                doc.text('Sistema de Tutorías - Universidad Laica Eloy Alfaro de Manabí', 148, 205, { align: 'center' });
+            }
+
+            // Descargar
+            const fechaActual = new Date().toISOString().split('T')[0];
+            doc.save(`Reporte_Tutorias_${fechaActual}.pdf`);
+            
+            mostrarMensaje('✅ PDF generado correctamente', 'success');
+        }
+
+        // ===== EXPORTAR A EXCEL =====
+        function exportarExcel() {
+            if (datosReporteActual.length === 0) {
+                mostrarMensaje('❌ No hay datos para exportar', 'error');
+                return;
+            }
+
+            // Preparar datos para Excel
+            const datosExcel = datosReporteActual.map(t => ({
+                'Fecha': t.fecha,
+                'Hora': t.hora,
+                'Tema': t.tema,
+                'Tutor': t.tutorNombre,
+                'Materia': t.materia || 'N/A',
+                'Tipo': t.tipo,
+                'Carrera': t.carrera || 'N/A',
+                'Curso': t.curso || 'N/A',
+                'Paralelo': t.paralelo || 'N/A',
+                'Estudiantes Inscritos': t.estudiantes,
+                'Nombres Estudiantes': t.nombresEstudiantes,
+                'Asistencias Confirmadas': t.asistencias,
+                'Estado': t.estado.charAt(0).toUpperCase() + t.estado.slice(1)
+            }));
+
+            // Crear libro de Excel
+            const ws = XLSX.utils.json_to_sheet(datosExcel);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Tutorías');
+
+            // Ajustar ancho de columnas
+            const colWidths = [
+                { wch: 12 },  // Fecha
+                { wch: 8 },   // Hora
+                { wch: 30 },  // Tema
+                { wch: 20 },  // Tutor
+                { wch: 20 },  // Materia
+                { wch: 10 },  // Tipo
+                { wch: 25 },  // Carrera
+                { wch: 8 },   // Curso
+                { wch: 10 },  // Paralelo
+                { wch: 12 },  // Estudiantes
+                { wch: 40 },  // Nombres
+                { wch: 12 },  // Asistencias
+                { wch: 12 }   // Estado
+            ];
+            ws['!cols'] = colWidths;
+
+            // Descargar
+            const fechaActual = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `Reporte_Tutorias_${fechaActual}.xlsx`);
+            
+            mostrarMensaje('✅ Excel generado correctamente', 'success');
+        }
+
+        // ===== FUNCIONES PARA VISUALIZAR DATOS DE USUARIOS =====
+        function mostrarDatosUsuarios() {
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            
+            // Excluir al coordinador por seguridad
+            const usuariosSinCoordinador = usuarios.filter(u => u.rol !== 'coordinador');
+            
+            if (usuariosSinCoordinador.length === 0) {
+                mostrarMensaje('❌ No hay usuarios registrados en el sistema', 'error');
+                return;
+            }
+
+            // Contar por rol
+            const tutores = usuariosSinCoordinador.filter(u => u.rol === 'tutor').length;
+            const alumnos = usuariosSinCoordinador.filter(u => u.rol === 'alumno').length;
+
+            // Actualizar contadores
+            document.getElementById('totalUsuariosData').textContent = usuariosSinCoordinador.length;
+            document.getElementById('totalTutoresData').textContent = tutores;
+            document.getElementById('totalAlumnosData').textContent = alumnos;
+
+            // Generar tabla
+            const tbody = document.getElementById('tablaDatosUsuarios');
+            tbody.innerHTML = usuariosSinCoordinador.map((u, index) => {
+                const bgColor = index % 2 === 0 ? '#f9fafb' : 'white';
+                const rolColor = u.rol === 'tutor' ? '#75b532' : '#1a1a1a';
+                
+                return `
+                    <tr style="background: ${bgColor};">
+                        <td style="padding: 10px; border: 1px solid #ddd;">${u.nombre}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 12px;">${u.email}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 12px; background: #fff3cd;">${u.password}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <span style="background: ${rolColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                ${u.rol.toUpperCase()}
+                            </span>
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${u.carrera || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${u.curso ? u.curso + '°' : '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${u.paralelo || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${u.materia || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Mostrar vista
+            document.getElementById('vistaDatosUsuarios').style.display = 'block';
+            mostrarMensaje('✅ Datos cargados correctamente', 'success');
+        }
+
+        function ocultarDatosUsuarios() {
+            document.getElementById('vistaDatosUsuarios').style.display = 'none';
+        }
+
+        // ===== EXPORTAR DATOS A JSON =====
+        function exportarDatosJSON() {
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            
+            // Excluir al coordinador
+            const usuariosSinCoordinador = usuarios.filter(u => u.rol !== 'coordinador');
+            
+            if (usuariosSinCoordinador.length === 0) {
+                mostrarMensaje('❌ No hay usuarios para exportar', 'error');
+                return;
+            }
+
+            // Crear objeto con metadata
+            const exportData = {
+                fecha_exportacion: new Date().toISOString(),
+                total_usuarios: usuariosSinCoordinador.length,
+                usuarios: usuariosSinCoordinador
+            };
+
+            // Convertir a JSON con formato bonito
+            const jsonString = JSON.stringify(exportData, null, 2);
+            
+            // Crear blob y descargar
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Usuarios_ULEAM_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            mostrarMensaje('✅ Archivo JSON descargado correctamente', 'success');
+        }
+
+        // ===== EXPORTAR DATOS A CSV =====
+        function exportarDatosCSV() {
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            
+            // Excluir al coordinador
+            const usuariosSinCoordinador = usuarios.filter(u => u.rol !== 'coordinador');
+            
+            if (usuariosSinCoordinador.length === 0) {
+                mostrarMensaje('❌ No hay usuarios para exportar', 'error');
+                return;
+            }
+
+            // Crear encabezados CSV
+            const headers = ['Nombre', 'Email', 'Contraseña', 'Rol', 'Carrera', 'Curso', 'Paralelo', 'Materia'];
+            
+            // Crear filas CSV
+            const rows = usuariosSinCoordinador.map(u => [
+                u.nombre,
+                u.email,
+                u.password,
+                u.rol,
+                u.carrera || '',
+                u.curso || '',
+                u.paralelo || '',
+                u.materia || ''
+            ]);
+
+            // Combinar encabezados y filas
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+            ].join('\n');
+
+            // Crear blob y descargar
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // \uFEFF para BOM UTF-8
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Usuarios_ULEAM_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            mostrarMensaje('✅ Archivo CSV descargado correctamente', 'success');
+        }
+
+        // ===== CERRAR SESION =====
+        function cerrarSesion() {
+            // Borrar sesión de localStorage
+            localStorage.removeItem('sesion');
+            
+            // Ocultar dashboard y todos los paneles
+            document.getElementById('dashboardSection').style.display = 'none';
+            document.getElementById('coordinadorPanel').style.display = 'none';
+            document.getElementById('tutorPanel').style.display = 'none';
+            document.getElementById('alumnoPanel').style.display = 'none';
+            document.getElementById('perfilSection').style.display = 'none';
+            
+            // Mostrar login
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('registerSection').style.display = 'none';
+            document.getElementById('loginForm').reset();
+            
+            // Restaurar estilos del container y body
+            document.querySelector('.container').classList.remove('dashboard-activo');
+            document.body.style.padding = '0';
+            document.body.style.alignItems = 'center';
+            
+            mostrarMensaje('✅ Sesión cerrada', 'success');
+        }
+
+        // ===== ELIMINAR USUARIO =====
+        function eliminarUsuario(email) {
+            if (email === 'coordinador@live.uleam.edu.ec') {
+                mostrarMensaje('❌ No puedes eliminar al coordinador principal', 'error');
+                return;
+            }
+
+            if (confirm(`¿Estás seguro de eliminar al usuario ${email}?\n\nEsto también eliminará todas sus tutorías asociadas.`)) {
+                let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+                usuarios = usuarios.filter(u => u.email !== email);
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+                // También eliminar tutorías asociadas
+                let tutorias = JSON.parse(localStorage.getItem('tutorias') || '[]');
+                tutorias = tutorias.filter(t => t.alumnoEmail !== email && t.tutorEmail !== email);
+                localStorage.setItem('tutorias', JSON.stringify(tutorias));
+
+                mostrarMensaje('✅ Usuario eliminado correctamente', 'success');
+                cargarListaUsuarios();
+                cargarTodasTutorias();
+            }
+        }
+
+        // ===== EDITAR USUARIO =====
+        function editarUsuario(email) {
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            const usuario = usuarios.find(u => u.email === email);
+
+            if (!usuario) return;
+
+            // Llenar el formulario modal
+            document.getElementById('editEmail').value = usuario.email;
+            document.getElementById('editNombre').value = usuario.nombre;
+            document.getElementById('editPassword').value = '';
+
+            // Ocultar todos los campos específicos por defecto
+            document.getElementById('editMateriaGroup').style.display = 'none';
+            document.getElementById('editCarreraGroup').style.display = 'none';
+            document.getElementById('editCursoGroup').style.display = 'none';
+            document.getElementById('editParaleloGroup').style.display = 'none';
+
+            // Mostrar campos según el rol
+            if (usuario.rol === 'tutor') {
+                document.getElementById('editMateriaGroup').style.display = 'block';
+                document.getElementById('editMateria').value = usuario.materia || '';
+                document.getElementById('editCarreraGroup').style.display = 'block';
+                document.getElementById('editCarrera').value = usuario.carrera || '';
+                document.getElementById('editParaleloGroup').style.display = 'block';
+                document.getElementById('editParalelo').value = usuario.paralelo || '';
+            } else if (usuario.rol === 'alumno') {
+                document.getElementById('editCarreraGroup').style.display = 'block';
+                document.getElementById('editCarrera').value = usuario.carrera || '';
+                document.getElementById('editCursoGroup').style.display = 'block';
+                document.getElementById('editCurso').value = usuario.curso || '';
+                document.getElementById('editParaleloGroup').style.display = 'block';
+                document.getElementById('editParalelo').value = usuario.paralelo || '';
+            }
+
+            // Mostrar modal
+            document.getElementById('modalEditarUsuario').style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalEditarUsuario').style.display = 'none';
+            document.getElementById('formEditarUsuario').reset();
+        }
+
+        // Manejar envío del formulario de edición
+        document.getElementById('formEditarUsuario').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('editEmail').value;
+            const nuevoNombre = document.getElementById('editNombre').value.trim();
+            const nuevaMateria = document.getElementById('editMateria').value.trim();
+            const nuevaCarrera = document.getElementById('editCarrera').value;
+            const nuevoCurso = document.getElementById('editCurso').value;
+            const nuevoParalelo = document.getElementById('editParalelo').value;
+            const nuevaPassword = document.getElementById('editPassword').value;
+
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            const usuario = usuarios.find(u => u.email === email);
+
+            if (usuario) {
+                usuario.nombre = nuevoNombre;
+                
+                if (usuario.rol === 'tutor') {
+                    if (nuevaMateria) usuario.materia = nuevaMateria;
+                    if (nuevaCarrera) usuario.carrera = nuevaCarrera;
+                    if (nuevoParalelo) usuario.paralelo = nuevoParalelo;
+                } else if (usuario.rol === 'alumno') {
+                    if (nuevaCarrera) usuario.carrera = nuevaCarrera;
+                    if (nuevoCurso) usuario.curso = nuevoCurso;
+                    if (nuevoParalelo) usuario.paralelo = nuevoParalelo;
+                }
+
+                if (nuevaPassword) {
+                    usuario.password = nuevaPassword;
+                }
+
+                // Guardar cambios en localStorage
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+                // SOLO actualizar la sesión si el usuario está editando su PROPIO perfil
+                const sesion = JSON.parse(localStorage.getItem('sesion'));
+                if (sesion && sesion.email === email) {
+                    // Este es el usuario logueado editando su propio perfil
+                    sesion.nombre = nuevoNombre;
+                    if (usuario.rol === 'tutor') {
+                        if (nuevaMateria) sesion.materia = nuevaMateria;
+                        if (nuevaCarrera) sesion.carrera = nuevaCarrera;
+                        if (nuevoParalelo) sesion.paralelo = nuevoParalelo;
+                    } else if (usuario.rol === 'alumno') {
+                        if (nuevaCarrera) sesion.carrera = nuevaCarrera;
+                        if (nuevoCurso) sesion.curso = nuevoCurso;
+                        if (nuevoParalelo) sesion.paralelo = nuevoParalelo;
+                    }
+                    localStorage.setItem('sesion', JSON.stringify(sesion));
+                    
+                    // Actualizar sidebar con los nuevos datos
+                    document.getElementById('userName').textContent = sesion.nombre;
+                    document.getElementById('userEmail').textContent = sesion.email;
+                    document.getElementById('userRol').textContent = sesion.rol.toUpperCase();
+                }
+
+                mostrarMensaje('✅ Usuario actualizado correctamente', 'success');
+                cargarListaUsuarios();
+                cerrarModal();
+            }
+        });
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('modalEditarUsuario').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModal();
+            }
+        });
+
+        // ===== CARGAR TUTORES PARA SELECT =====
+        function cargarTutoresParaSelect() {
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            const tutores = usuarios.filter(u => u.rol === 'tutor');
+            const select = document.getElementById('tutorSelect');
+            
+            select.innerHTML = '<option value="">-- Selecciona un tutor --</option>';
+            tutores.forEach(t => {
+                const materia = t.materia ? ` - ${t.materia}` : '';
+                select.innerHTML += `<option value="${t.email}">${t.nombre}${materia}</option>`;
+            });
+            
+            // Establecer fecha mínima (hoy) en el selector de fecha
+            const fechaInput = document.getElementById('tutoriaFecha');
+            const hoy = new Date();
+            const año = hoy.getFullYear();
+            const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoy.getDate()).padStart(2, '0');
+            const fechaMinima = `${año}-${mes}-${dia}`;
+            fechaInput.min = fechaMinima;
+        }
+
+        // ============================================
+        // SECCIÓN 4: GESTIÓN DE TUTORÍAS
+        // (Solicitar, crear, confirmar, rechazar, completar, asistencia)
+        // ============================================
+
+        // ===== SOLICITAR TUTORIA (ALUMNO) =====
+        document.getElementById('solicitarTutoriaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            const tutorEmail = document.getElementById('tutorSelect').value;
+            const fecha = document.getElementById('tutoriaFecha').value;
+            const hora = document.getElementById('tutoriaHora').value;
+            const tema = document.getElementById('tutoriaTema').value.trim();
+            const observaciones = document.getElementById('tutoriaObservaciones').value.trim();
+
+            // VALIDAR QUE LA FECHA NO SEA ANTERIOR A HOY
+            const fechaSeleccionada = new Date(fecha + 'T00:00:00');
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0); // Resetear hora para comparar solo fechas
+            
+            if (fechaSeleccionada < hoy) {
+                mostrarMensaje('❌ No puedes solicitar tutorías con fechas pasadas. Por favor selecciona una fecha a partir de hoy.', 'error');
+                return;
+            }
+
+            // VALIDAR HORARIO SEGÚN PARALELO
+            const paralelo = sesion.paralelo;
+            const [horaNum] = hora.split(':').map(Number);
+            
+            if (paralelo === 'A') {
+                // Paralelo A: 7 AM a 1 PM (07:00 - 13:00)
+                if (horaNum < 7 || horaNum > 13) {
+                    mostrarMensaje('❌ Paralelo A solo puede solicitar tutorías entre 7:00 AM (07:00) y 1:00 PM (13:00)', 'error');
+                    return;
+                }
+            } else if (paralelo === 'B') {
+                // Paralelo B: 2 PM a 8 PM (14:00 - 20:00)
+                if (horaNum < 14 || horaNum > 20) {
+                    mostrarMensaje('❌ Paralelo B solo puede solicitar tutorías entre 2:00 PM (14:00) y 8:00 PM (20:00)', 'error');
+                    return;
+                }
+            }
+
+            // Obtener nombre del tutor
+            const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            const tutor = usuarios.find(u => u.email === tutorEmail);
+
+            // Crear tutoría
+            let tutorias = JSON.parse(localStorage.getItem('tutorias') || '[]');
+            
+            const nuevaTutoria = {
+                id: Date.now(),
+                alumnoEmail: sesion.email,
+                alumnoNombre: sesion.nombre,
+                alumnoCarrera: sesion.carrera || 'No especificada',
+                alumnoCurso: sesion.curso || 'No especificado',
+                alumnoParalelo: sesion.paralelo || 'No especificado',
+                tutorEmail: tutorEmail,
+                tutorNombre: tutor.nombre,
+                tutorCarrera: tutor.carrera || 'No especificada',
+                fecha: fecha,
+                hora: hora,
+                tema: tema,
+                observaciones: observaciones,
+                estado: 'pendiente', // pendiente, confirmada, rechazada, completada
+                asistenciaAlumno: false, // Confirmación de asistencia del alumno
+                asistenciaCoordinador: false, // Confirmación de asistencia del coordinador
+                fechaCreacion: new Date().toISOString()
+            };
+
+            tutorias.push(nuevaTutoria);
+            localStorage.setItem('tutorias', JSON.stringify(tutorias));
+
+            mostrarMensaje('✅ Tutoría solicitada exitosamente', 'success');
+            this.reset();
+            cargarMisTutorias(sesion.email);
+        });
+
+        // ============================================
+        // SECCIÓN 7: RENDERIZADO DE DASHBOARDS
+        // (Funciones que muestran tutorías según el rol)
+        // ============================================
+
+        // ===== CARGAR MIS TUTORIAS (ALUMNO - SOLO GRUPALES) =====
+        function cargarMisTutorias(emailAlumno, fechaFiltro = null) {
+            // Cargar tutorías grupales donde el alumno está inscrito
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+            let misGrupales = tutoriasGrupales.filter(t => 
+                t.alumnos.some(a => a.email === emailAlumno)
+            );
+            
+            const container = document.getElementById('misTutorias');
+
+            // Aplicar filtro por fecha si existe
+            if (fechaFiltro) {
+                misGrupales = misGrupales.filter(t => t.fecha === fechaFiltro);
+                
+                if (misGrupales.length === 0) {
+                    container.innerHTML = `<p style="color: #666; text-align: center; padding: 20px; background: white; border-radius: 5px;">
+                        📅 No tienes tutorías programadas para el día <strong>${fechaFiltro}</strong>
+                    </p>`;
+                    return;
+                }
+                // Mostrar encabezado con la fecha filtrada
+                container.innerHTML = `<div style="background: #75b532; color: white; padding: 12px; border-radius: 5px; margin-bottom: 15px; text-align: center; font-weight: bold;">
+                    📅 Tus Tutorías del Día: ${fechaFiltro} (${misGrupales.length} ${misGrupales.length === 1 ? 'tutoría' : 'tutorías'})
+                </div>`;
+            } else if (misGrupales.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No estás inscrito en ninguna tutoría grupal. Revisa las <strong>Tutorías Grupales Disponibles</strong> arriba para inscribirte.</p>';
+                return;
+            }
+
+            // HTML para tutorías grupales
+            const grupalesHTML = misGrupales.map(t => {
+                const [horaNum, minutos] = t.hora.split(':');
+                const horaInt = parseInt(horaNum);
+                let hora12 = horaInt > 12 ? horaInt - 12 : (horaInt === 0 ? 12 : horaInt);
+                const periodo = horaInt >= 12 ? 'PM' : 'AM';
+                const horaFormato = `${hora12}:${minutos} ${periodo}`;
+
+                const alumno = t.alumnos.find(a => a.email === emailAlumno);
+                
+                // Manejo de estados
+                let estadoColor, estadoTexto, botonAsistencia = '';
+                
+                if (t.estado === 'cancelada') {
+                    // TUTORÍA CANCELADA
+                    estadoColor = '#e31e24';
+                    estadoTexto = '❌ CANCELADA';
+                    botonAsistencia = `<div style="margin-top: 10px; padding: 15px; background: #fee; border: 2px solid #e31e24; border-radius: 8px;">
+                        <div style="color: #e31e24; font-weight: 700; margin-bottom: 8px; font-size: 15px;">❌ Esta tutoría fue cancelada</div>
+                        <div style="color: #333; font-size: 14px;"><strong>Motivo:</strong> ${t.motivoCancelacion}</div>
+                        <div style="color: #999; font-size: 12px; margin-top: 5px;">Cancelada el: ${new Date(t.fechaCancelacion).toLocaleDateString()}</div>
+                    </div>`;
+                } else if (t.estado === 'abierta') {
+                    // TUTORÍA ABIERTA
+                    estadoColor = '#75b532';
+                    estadoTexto = '✅ Confirmada';
+                    if (alumno.asistencia) {
+                        botonAsistencia = `<div style="margin-top: 10px; padding: 10px; background: #d1fae5; border-radius: 5px; color: #065f46; font-weight: 500;">
+                            ✅ Has confirmado tu asistencia
+                        </div>`;
+                    } else {
+                        botonAsistencia = `<button onclick="confirmarAsistenciaGrupal(${t.id})" style="background: #75b532; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: 500; width: 100%;">
+                            ✅ Confirmar Mi Asistencia
+                        </button>`;
+                    }
+                } else if (t.estado === 'completada') {
+                    // TUTORÍA COMPLETADA
+                    estadoColor = '#1a1a1a';
+                    estadoTexto = '✔️ Completada';
+                    botonAsistencia = `<div style="margin-top: 10px; padding: 10px; background: #e8f5e9; border-radius: 5px; text-align: center; color: #2e7d32; font-weight: 600;">
+                        ✔️ Tutoría Completada ${alumno.asistencia ? '- Asististe ✅' : '- No asististe ❌'}
+                    </div>`;
+                }
+
+                return `
+                    <div style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid ${estadoColor};">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <strong style="font-size: 18px;">${t.tema}</strong>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <span style="background: #17a2b8; color: white; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 600;">GRUPAL</span>
+                                <span style="background: ${estadoColor}; color: white; padding: 4px 10px; border-radius: 5px; font-size: 12px;">${estadoTexto}</span>
+                            </div>
+                        </div>
+                        <p><strong>👨‍🏫 Tutor:</strong> ${t.tutorNombre} - ${t.tutorMateria}</p>
+                        <p><strong>📅 Fecha:</strong> ${t.fecha} <strong>⏰ Hora:</strong> ${horaFormato}</p>
+                        <p><strong>🎓 Carrera:</strong> ${t.carrera}</p>
+                        <p><strong>📖 Curso:</strong> ${t.curso}° Semestre | <strong>Paralelo:</strong> ${t.paralelo}</p>
+                        ${t.observaciones ? `<p><strong>📝 Observaciones:</strong> ${t.observaciones}</p>` : ''}
+                        <p style="color: #666; font-size: 14px;"><strong>👥 Total inscritos:</strong> ${t.alumnos.length} estudiantes</p>
+                        ${botonAsistencia}
+                    </div>
+                `;
+            }).join('');
+
+            // Renderizar en el contenedor
+            if (fechaFiltro) {
+                container.innerHTML += grupalesHTML;
+            } else {
+                container.innerHTML = grupalesHTML;
+            }
+        }
+
+        // ===== FILTRAR MIS TUTORIAS POR FECHA (ALUMNO) =====
+        function filtrarMisTutoriasPorFecha() {
+            const fechaFiltro = document.getElementById('filtroFechaAlumno').value;
+            if (!fechaFiltro) {
+                mostrarMensaje('⚠️ Por favor selecciona una fecha', 'error');
+                return;
+            }
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            cargarMisTutorias(sesion.email, fechaFiltro);
+        }
+
+        function limpiarFiltroAlumno() {
+            document.getElementById('filtroFechaAlumno').value = '';
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            cargarMisTutorias(sesion.email);
+        }
+
+        // ===== FILTRAR TUTORIAS DEL TUTOR POR FECHA =====
+        function filtrarTutoriasTutorPorFecha() {
+            const fechaFiltro = document.getElementById('filtroFechaTutor').value;
+            if (!fechaFiltro) {
+                mostrarMensaje('⚠️ Por favor selecciona una fecha', 'error');
+                return;
+            }
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            cargarTutoriasTutor(sesion.email, fechaFiltro);
+        }
+
+        function limpiarFiltroTutor() {
+            document.getElementById('filtroFechaTutor').value = '';
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            cargarTutoriasTutor(sesion.email);
+        }
+
+        // ===== CARGAR TUTORIAS DEL TUTOR (SOLO GRUPALES) =====
+        function cargarTutoriasTutor(emailTutor, fechaFiltro = null) {
+            // Cargar tutorías grupales
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+            let misGrupales = tutoriasGrupales.filter(t => t.tutorEmail === emailTutor);
+
+            // Aplicar filtro por fecha si existe
+            if (fechaFiltro) {
+                misGrupales = misGrupales.filter(t => t.fecha === fechaFiltro);
+            }
+            
+            // Separar tutorías grupales por estado
+            const grupalesAbiertas = misGrupales.filter(t => t.estado === 'abierta');
+            const grupalesCompletadas = misGrupales.filter(t => t.estado === 'completada');
+            const grupalesCanceladas = misGrupales.filter(t => t.estado === 'cancelada');
+
+            // ========== MIS TUTORÍAS GRUPALES ==========
+            const containerGrupales = document.getElementById('tutoriasGrupalesTutor');
+            
+            // HTML para tutorías grupales ABIERTAS (esperando inscripciones)
+            let htmlGrupalesAbiertas = '';
+            if (grupalesAbiertas.length > 0) {
+                htmlGrupalesAbiertas = `<h5 style="color: #4caf50; margin-top: 0; margin-bottom: 15px;">📖 Tutorías Grupales Abiertas (${grupalesAbiertas.length})</h5>` + grupalesAbiertas.map(t => {
+                    const [horaNum, minutos] = t.hora.split(':');
+                    const horaInt = parseInt(horaNum);
+                    let hora12 = horaInt > 12 ? horaInt - 12 : (horaInt === 0 ? 12 : horaInt);
+                    const periodo = horaInt >= 12 ? 'PM' : 'AM';
+                    const horaFormato = `${hora12}:${minutos} ${periodo}`;
+
+                    const alumnosHTML = t.alumnos.length === 0 ? 
+                        '<p style="color: #999; font-style: italic;">Aún no hay estudiantes inscritos</p>' :
+                        t.alumnos.map(alumno => {
+                            const asistenciaIcon = alumno.asistencia ? '✅' : '⏳';
+                            const asistenciaColor = alumno.asistencia ? '#4caf50' : '#ff9800';
+                            
+                            const botonAsistencia = `<button onclick="toggleAsistenciaGrupal(${t.id}, '${alumno.email}')" style="background: ${asistenciaColor}; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">
+                                ${alumno.asistencia ? '✓ Presente' : 'Marcar Asistencia'}
+                            </button>`;
+
+                            return `
+                                <div style="background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 5px 0; border-left: 3px solid ${asistenciaColor}; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>${asistenciaIcon} ${alumno.nombre}</span>
+                                    ${botonAsistencia}
+                                </div>
+                            `;
+                        }).join('');
+
+                    const botonCompletar = `<button onclick="completarTutoriaGrupal(${t.id})" style="background: #1a1a1a; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px; width: 100%;">✔️ Marcar como Completada</button>`;
+                    const botonCancelar = `<button onclick="abrirModalCancelar(${t.id})" style="background: #e31e24; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 8px; width: 100%;">❌ Cancelar Tutoría</button>`;
+
+                    return `
+                        <div style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #75b532;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <strong style="font-size: 18px;">${t.tema}</strong>
+                                <span style="background: #75b532; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">GRUPAL</span>
+                            </div>
+                            <p><strong>Carrera:</strong> ${t.carrera}</p>
+                            <p><strong>Curso:</strong> ${t.curso}° Semestre | <strong>Paralelo:</strong> ${t.paralelo}</p>
+                            <p><strong>Fecha:</strong> ${t.fecha} <strong>Hora:</strong> ${horaFormato}</p>
+                            ${t.observaciones ? `<p><strong>Observaciones:</strong> ${t.observaciones}</p>` : ''}
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #f0f0f0;">
+                                <strong style="display: block; margin-bottom: 10px;">Estudiantes Inscritos (${t.alumnos.length}):</strong>
+                                ${alumnosHTML}
+                            </div>
+                            ${botonCompletar}
+                            ${botonCancelar}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // HTML para tutorías grupales COMPLETADAS
+            let htmlGrupalesCompletadas = '';
+            if (grupalesCompletadas.length > 0) {
+                htmlGrupalesCompletadas = grupalesCompletadas.map(t => {
+                    const [horaNum, minutos] = t.hora.split(':');
+                    const horaInt = parseInt(horaNum);
+                    let hora12 = horaInt > 12 ? horaInt - 12 : (horaInt === 0 ? 12 : horaInt);
+                    const periodo = horaInt >= 12 ? 'PM' : 'AM';
+                    const horaFormato = `${hora12}:${minutos} ${periodo}`;
+
+                    const alumnosHTML = t.alumnos.length === 0 ? 
+                        '<p style="color: #999; font-style: italic;">No hubo estudiantes inscritos</p>' :
+                        t.alumnos.map(alumno => {
+                            const asistenciaIcon = alumno.asistencia ? '✅' : '❌';
+                            const asistenciaColor = alumno.asistencia ? '#4caf50' : '#f44336';
+                            const asistenciaTexto = alumno.asistencia ? 'Asistió' : 'No asistió';
+                            
+                            return `
+                                <div style="background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 5px 0; border-left: 3px solid ${asistenciaColor}; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>${asistenciaIcon} ${alumno.nombre}</span>
+                                    <span style="color: ${asistenciaColor}; font-size: 12px; font-weight: 600;">${asistenciaTexto}</span>
+                                </div>
+                            `;
+                        }).join('');
+
+                    return `
+                        <div style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #1a1a1a;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <strong style="font-size: 18px;">${t.tema}</strong>
+                                <span style="background: #1a1a1a; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">COMPLETADA</span>
+                            </div>
+                            <p><strong>Carrera:</strong> ${t.carrera}</p>
+                            <p><strong>Curso:</strong> ${t.curso}° Semestre | <strong>Paralelo:</strong> ${t.paralelo}</p>
+                            <p><strong>Fecha:</strong> ${t.fecha} <strong>Hora:</strong> ${horaFormato}</p>
+                            ${t.observaciones ? `<p><strong>Observaciones:</strong> ${t.observaciones}</p>` : ''}
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #f0f0f0;">
+                                <strong style="display: block; margin-bottom: 10px;">Estudiantes que asistieron (${t.alumnos.filter(a => a.asistencia).length}/${t.alumnos.length}):</strong>
+                                ${alumnosHTML}
+                            </div>
+                            <div style="background: #e8f5e9; padding: 10px; border-radius: 5px; text-align: center; color: #2e7d32; font-weight: 600; margin-top: 10px;">✔️ Tutoría Completada</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // HTML para tutorías grupales CANCELADAS
+            let htmlGrupalesCanceladas = '';
+            if (grupalesCanceladas.length > 0) {
+                htmlGrupalesCanceladas = grupalesCanceladas.map(t => {
+                    const [horaNum, minutos] = t.hora.split(':');
+                    const horaInt = parseInt(horaNum);
+                    let hora12 = horaInt > 12 ? horaInt - 12 : (horaInt === 0 ? 12 : horaInt);
+                    const periodo = horaInt >= 12 ? 'PM' : 'AM';
+                    const horaFormato = `${hora12}:${minutos} ${periodo}`;
+
+                    const alumnosHTML = t.alumnos.length === 0 ? 
+                        '<p style="color: #999; font-style: italic;">No había estudiantes inscritos</p>' :
+                        `<p style="color: #666; font-size: 14px;">${t.alumnos.length} estudiantes fueron notificados de la cancelación</p>`;
+
+                    return `
+                        <div style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #e31e24;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <strong style="font-size: 18px;">${t.tema}</strong>
+                                <span style="background: #e31e24; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">❌ CANCELADA</span>
+                            </div>
+                            <p><strong>Carrera:</strong> ${t.carrera}</p>
+                            <p><strong>Curso:</strong> ${t.curso}° Semestre | <strong>Paralelo:</strong> ${t.paralelo}</p>
+                            <p><strong>Fecha:</strong> ${t.fecha} <strong>Hora:</strong> ${horaFormato}</p>
+                            ${t.observaciones ? `<p><strong>Observaciones:</strong> ${t.observaciones}</p>` : ''}
+                            <div style="margin-top: 15px; padding: 15px; background: #fee; border: 2px solid #e31e24; border-radius: 8px;">
+                                <div style="color: #e31e24; font-weight: 700; margin-bottom: 8px;">Motivo de cancelación:</div>
+                                <div style="color: #333; font-size: 14px;">${t.motivoCancelacion}</div>
+                                <div style="color: #999; font-size: 12px; margin-top: 8px;">Cancelada el: ${new Date(t.fechaCancelacion).toLocaleDateString()}</div>
+                            </div>
+                            ${alumnosHTML}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Renderizar sección de Tutorías Grupales
+            if (grupalesAbiertas.length === 0 && grupalesCompletadas.length === 0 && grupalesCanceladas.length === 0) {
+                containerGrupales.innerHTML = '<p style="color: #666; text-align: center; padding: 20px; background: white; border-radius: 5px;">No tienes tutorías grupales activas</p>';
+            } else {
+                let htmlFinal = htmlGrupalesAbiertas;
+                if (grupalesCompletadas.length > 0) {
+                    htmlFinal += `<h5 style="color: #1a1a1a; margin-top: 20px;">✔️ Tutorías Grupales Completadas (${grupalesCompletadas.length})</h5>` + htmlGrupalesCompletadas;
+                }
+                if (grupalesCanceladas.length > 0) {
+                    htmlFinal += `<h5 style="color: #e31e24; margin-top: 20px;">❌ Tutorías Grupales Canceladas (${grupalesCanceladas.length})</h5>` + htmlGrupalesCanceladas;
+                }
+                containerGrupales.innerHTML = htmlFinal;
+            }
+        }
+
+        // ===== FUNCIONES ANTIGUAS COMENTADAS (tutorías individuales ya no existen) =====
+        /*
+        function confirmarTutoria(id) {
+            let tutorias = JSON.parse(localStorage.getItem('tutorias') || '[]');
+            const tutoria = tutorias.find(t => t.id === id);
+            if (tutoria) {
+                tutoria.estado = 'confirmada';
+                localStorage.setItem('tutorias', JSON.stringify(tutorias));
+                mostrarMensaje('✅ Tutoría confirmada', 'success');
+                const sesion = JSON.parse(localStorage.getItem('sesion'));
+                cargarTutoriasTutor(sesion.email);
+            }
+        }
+
+        function rechazarTutoria(id) {
+            document.getElementById('tutoriaIdRechazo').value = id;
+            document.getElementById('modalRechazar').style.display = 'flex';
+        }
+        */
+
+        // ============================================
+        // SECCIÓN 6: GESTIÓN DE PERFIL DE USUARIO
+        // (Ver perfil, editar datos, cambiar contraseña)
+        // ============================================
+
+        // ===== FUNCIONES DE PERFIL =====
+        function mostrarPerfil() {
+            // Leer la sesión actual y validar integridad
+            let sesion = JSON.parse(localStorage.getItem('sesion'));
+            
+            // VALIDACIÓN: Verificar que la sesión tenga datos válidos
+            if (!sesion || !sesion.email || !sesion.rol) {
+                mostrarMensaje('❌ Sesión inválida. Por favor inicia sesión nuevamente.', 'error');
+                cerrarSesion();
+                return;
+            }
+            
+            // SEGURIDAD: Recargar datos del usuario desde la lista de usuarios
+            // para asegurar que no se muestren datos de otro usuario
+            const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            const usuarioActual = usuarios.find(u => u.email === sesion.email);
+            
+            if (!usuarioActual) {
+                mostrarMensaje('❌ Usuario no encontrado. Por favor inicia sesión nuevamente.', 'error');
+                cerrarSesion();
+                return;
+            }
+            
+            // Usar los datos del usuario actual (no de la sesión corrupta)
+            sesion = usuarioActual;
+            
+            // IMPORTANTE: Actualizar la sesión en localStorage con datos correctos
+            localStorage.setItem('sesion', JSON.stringify(usuarioActual));
+            
+            // Ocultar paneles de rol
+            document.getElementById('coordinadorPanel').style.display = 'none';
+            document.getElementById('tutorPanel').style.display = 'none';
+            document.getElementById('alumnoPanel').style.display = 'none';
+            
+            // Mostrar perfil
+            document.getElementById('perfilSection').style.display = 'block';
+            
+            // Llenar datos básicos
+            document.getElementById('perfilNombre').textContent = sesion.nombre;
+            document.getElementById('perfilEmail').textContent = sesion.email;
+            document.getElementById('perfilRol').textContent = sesion.rol.toUpperCase();
+            
+            // Ocultar ambas secciones por defecto
+            document.getElementById('perfilTutorInfo').style.display = 'none';
+            document.getElementById('perfilAlumnoInfo').style.display = 'none';
+            
+            // Mostrar información específica según el rol
+            if (sesion.rol === 'coordinador') {
+                // El coordinador no necesita información adicional, solo nombre, email y rol
+                // No se muestra ninguna sección extra
+            } else if (sesion.rol === 'tutor') {
+                document.getElementById('perfilTutorInfo').style.display = 'block';
+                document.getElementById('perfilMateria').textContent = sesion.materia || 'No especificada';
+                document.getElementById('perfilCarreraTutor').textContent = sesion.carrera || 'No especificada';
+                
+                // Mostrar paralelo con formato bonito
+                if (sesion.paralelo) {
+                    const paraleloTexto = sesion.paralelo === 'A' ? 'Paralelo A (Mañana: 7 AM - 1 PM)' : 'Paralelo B (Tarde: 2 PM - 8 PM)';
+                    document.getElementById('perfilParaleloTutor').textContent = paraleloTexto;
+                } else {
+                    document.getElementById('perfilParaleloTutor').textContent = 'No especificado';
+                }
+            } else if (sesion.rol === 'alumno') {
+                document.getElementById('perfilAlumnoInfo').style.display = 'block';
+                document.getElementById('perfilCarreraAlumno').textContent = sesion.carrera || 'No especificada';
+                document.getElementById('perfilCurso').textContent = sesion.curso ? `${sesion.curso}° Semestre` : 'No especificado';
+                
+                // Mostrar paralelo con formato bonito
+                if (sesion.paralelo) {
+                    const paraleloTexto = sesion.paralelo === 'A' ? 'Paralelo A (Mañana)' : 'Paralelo B (Tarde)';
+                    document.getElementById('perfilParaleloAlumno').textContent = paraleloTexto;
+                } else {
+                    document.getElementById('perfilParaleloAlumno').textContent = 'No especificado';
+                }
+            }
+        }
+
+        function ocultarPerfil() {
+            document.getElementById('perfilSection').style.display = 'none';
+            
+            // Obtener sesión actualizada
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            
+            if (!sesion) {
+                cerrarSesion();
+                return;
+            }
+            
+            // Ocultar TODOS los paneles primero
+            document.getElementById('coordinadorPanel').style.display = 'none';
+            document.getElementById('tutorPanel').style.display = 'none';
+            document.getElementById('alumnoPanel').style.display = 'none';
+            
+            // Mostrar panel según rol ACTUAL
+            if (sesion.rol === 'coordinador') {
+                document.getElementById('coordinadorPanel').style.display = 'block';
+            } else if (sesion.rol === 'tutor') {
+                document.getElementById('tutorPanel').style.display = 'block';
+            } else if (sesion.rol === 'alumno') {
+                document.getElementById('alumnoPanel').style.display = 'block';
+            }
+        }
+
+        // ===== EDITAR PERFIL =====
+        function mostrarModalEditarPerfil() {
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            
+            document.getElementById('editPerfilNombre').value = sesion.nombre;
+            
+            if (sesion.rol === 'tutor') {
+                document.getElementById('editPerfilMateriaGroup').style.display = 'block';
+                document.getElementById('editPerfilMateria').value = sesion.materia || '';
+            } else {
+                document.getElementById('editPerfilMateriaGroup').style.display = 'none';
+            }
+            
+            document.getElementById('modalEditarPerfil').style.display = 'flex';
+        }
+
+        function cerrarModalEditarPerfil() {
+            document.getElementById('modalEditarPerfil').style.display = 'none';
+            document.getElementById('formEditarPerfil').reset();
+        }
+
+        document.getElementById('formEditarPerfil').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            const nuevoNombre = document.getElementById('editPerfilNombre').value.trim();
+            const nuevaMateria = document.getElementById('editPerfilMateria').value.trim();
+            
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            const usuario = usuarios.find(u => u.email === sesion.email);
+            
+            if (usuario) {
+                usuario.nombre = nuevoNombre;
+                sesion.nombre = nuevoNombre;
+                
+                if (sesion.rol === 'tutor' && nuevaMateria) {
+                    usuario.materia = nuevaMateria;
+                    sesion.materia = nuevaMateria;
+                }
+                
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                localStorage.setItem('sesion', JSON.stringify(sesion));
+                
+                // Actualizar UI
+                document.getElementById('userName').textContent = nuevoNombre;
+                document.getElementById('perfilNombre').textContent = nuevoNombre;
+                if (sesion.rol === 'tutor') {
+                    document.getElementById('perfilMateria').textContent = nuevaMateria || 'No especificada';
+                }
+                
+                mostrarMensaje('✅ Perfil actualizado correctamente', 'success');
+                cerrarModalEditarPerfil();
+            }
+        });
+
+        document.getElementById('modalEditarPerfil').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModalEditarPerfil();
+            }
+        });
+
+        // ===== CAMBIAR CONTRASEÑA =====
+        function mostrarModalCambiarPassword() {
+            document.getElementById('mensajePassword').style.display = 'none';
+            document.getElementById('modalCambiarPassword').style.display = 'flex';
+        }
+
+        function cerrarModalCambiarPassword() {
+            document.getElementById('modalCambiarPassword').style.display = 'none';
+            document.getElementById('formCambiarPassword').reset();
+            document.getElementById('mensajePassword').style.display = 'none';
+        }
+
+        function mostrarMensajePassword(texto, tipo) {
+            const msg = document.getElementById('mensajePassword');
+            msg.textContent = texto;
+            msg.style.display = 'block';
+            if (tipo === 'error') {
+                msg.style.background = '#fee2e2';
+                msg.style.color = '#991b1b';
+            } else {
+                msg.style.background = '#d1fae5';
+                msg.style.color = '#065f46';
+            }
+        }
+
+        document.getElementById('formCambiarPassword').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            const passwordActual = document.getElementById('passwordActual').value;
+            const passwordNueva = document.getElementById('passwordNueva').value;
+            const passwordConfirmar = document.getElementById('passwordConfirmar').value;
+            
+            // Verificar contraseña actual
+            if (sesion.password !== passwordActual) {
+                mostrarMensajePassword('❌ La contraseña actual es incorrecta', 'error');
+                document.getElementById('passwordActual').style.border = '2px solid #e31e24';
+                setTimeout(() => {
+                    document.getElementById('passwordActual').style.border = '2px solid #ddd';
+                }, 2000);
+                return;
+            }
+            
+            // Verificar que las nuevas contraseñas coincidan
+            if (passwordNueva !== passwordConfirmar) {
+                mostrarMensajePassword('❌ Las contraseñas nuevas no coinciden', 'error');
+                document.getElementById('passwordNueva').style.border = '2px solid #e31e24';
+                document.getElementById('passwordConfirmar').style.border = '2px solid #e31e24';
+                setTimeout(() => {
+                    document.getElementById('passwordNueva').style.border = '2px solid #ddd';
+                    document.getElementById('passwordConfirmar').style.border = '2px solid #ddd';
+                }, 2000);
+                return;
+            }
+            
+            // Verificar longitud mínima
+            if (passwordNueva.length < 6) {
+                mostrarMensajePassword('❌ La contraseña debe tener al menos 6 caracteres', 'error');
+                document.getElementById('passwordNueva').style.border = '2px solid #e31e24';
+                setTimeout(() => {
+                    document.getElementById('passwordNueva').style.border = '2px solid #ddd';
+                }, 2000);
+                return;
+            }
+            
+            // Actualizar contraseña
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            const usuario = usuarios.find(u => u.email === sesion.email);
+            
+            if (usuario) {
+                usuario.password = passwordNueva;
+                sesion.password = passwordNueva;
+                
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                localStorage.setItem('sesion', JSON.stringify(sesion));
+                
+                mostrarMensajePassword('✅ Contraseña cambiada exitosamente', 'success');
+                setTimeout(() => {
+                    cerrarModalCambiarPassword();
+                    mostrarMensaje('✅ Contraseña cambiada exitosamente', 'success');
+                }, 1500);
+            } else {
+                mostrarMensajePassword('❌ Error al cambiar la contraseña', 'error');
+            }
+        });
+
+        document.getElementById('modalCambiarPassword').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModalCambiarPassword();
+            }
+        });
+
+        // ===== COMPLETAR TUTORIA GRUPAL =====
+        function completarTutoriaGrupal(id) {
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+            const tutoria = tutoriasGrupales.find(t => t.id === id);
+            
+            if (!tutoria) {
+                mostrarMensaje('❌ Tutoría no encontrada', 'error');
+                return;
+            }
+
+            // Validar que haya al menos 1 estudiante inscrito
+            if (!tutoria.alumnos || tutoria.alumnos.length === 0) {
+                mostrarMensaje('❌ No se puede completar una tutoría sin estudiantes inscritos', 'error');
+                return;
+            }
+
+            if (confirm('¿Marcar esta tutoría grupal como completada?')) {
+                tutoria.estado = 'completada';
+                localStorage.setItem('tutoriasGrupales', JSON.stringify(tutoriasGrupales));
+                mostrarMensaje('✔️ Tutoría grupal completada', 'success');
+                const sesion = JSON.parse(localStorage.getItem('sesion'));
+                cargarTutoriasTutor(sesion.email);
+            }
+        }
+
+        // ===== FUNCIONES PARA CANCELAR TUTORÍA =====
+        function abrirModalCancelar(tutoriaId) {
+            document.getElementById('tutoriaIdCancelar').value = tutoriaId;
+            document.getElementById('motivoCancelacion').value = '';
+            document.getElementById('modalCancelarTutoria').style.display = 'flex';
+        }
+
+        function cerrarModalCancelar() {
+            document.getElementById('modalCancelarTutoria').style.display = 'none';
+            document.getElementById('formCancelarTutoria').reset();
+        }
+
+        function confirmarCancelacion(e) {
+            e.preventDefault();
+            
+            const tutoriaId = parseInt(document.getElementById('tutoriaIdCancelar').value);
+            const motivo = document.getElementById('motivoCancelacion').value.trim();
+            
+            if (motivo.length < 10) {
+                mostrarMensaje('❌ El motivo debe tener al menos 10 caracteres', 'error');
+                return;
+            }
+
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+            const tutoria = tutoriasGrupales.find(t => t.id === tutoriaId);
+            
+            if (!tutoria) {
+                mostrarMensaje('❌ Tutoría no encontrada', 'error');
+                cerrarModalCancelar();
+                return;
+            }
+
+            // Actualizar estado de la tutoría
+            tutoria.estado = 'cancelada';
+            tutoria.motivoCancelacion = motivo;
+            tutoria.fechaCancelacion = new Date().toISOString();
+            
+            localStorage.setItem('tutoriasGrupales', JSON.stringify(tutoriasGrupales));
+            
+            mostrarMensaje('❌ Tutoría cancelada. Los estudiantes verán el motivo de cancelación.', 'success');
+            cerrarModalCancelar();
+            
+            // Recargar lista de tutorías
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            cargarTutoriasTutor(sesion.email);
+        }
+
+        // ===== TOGGLE ASISTENCIA ALUMNO EN TUTORIA GRUPAL =====
+        function toggleAsistenciaGrupal(tutoriaId, alumnoEmail) {
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+            const tutoria = tutoriasGrupales.find(t => t.id === tutoriaId);
+            
+            if (tutoria) {
+                const alumno = tutoria.alumnos.find(a => a.email === alumnoEmail);
+                if (alumno) {
+                    alumno.asistencia = !alumno.asistencia;
+                    localStorage.setItem('tutoriasGrupales', JSON.stringify(tutoriasGrupales));
+                    const mensaje = alumno.asistencia ? '✅ Asistencia confirmada' : '⏳ Asistencia desmarcada';
+                    mostrarMensaje(mensaje, 'success');
+                    const sesion = JSON.parse(localStorage.getItem('sesion'));
+                    cargarTutoriasTutor(sesion.email);
+                }
+            }
+        }
+
+        // ===== CONFIRMAR ASISTENCIA ALUMNO EN TUTORIA GRUPAL =====
+        function confirmarAsistenciaGrupal(tutoriaId) {
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            if (confirm('¿Confirmas que asistirás a esta tutoría?')) {
+                let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+                const tutoria = tutoriasGrupales.find(t => t.id === tutoriaId);
+                
+                if (tutoria) {
+                    const alumno = tutoria.alumnos.find(a => a.email === sesion.email);
+                    if (alumno) {
+                        alumno.asistencia = true;
+                        localStorage.setItem('tutoriasGrupales', JSON.stringify(tutoriasGrupales));
+                        mostrarMensaje('✅ Asistencia confirmada exitosamente', 'success');
+                        cargarMisTutorias(sesion.email);
+                    }
+                }
+            }
+        }
+
+        // ===== FILTRAR TUTORIAS POR FECHA =====
+        function filtrarPorFecha() {
+            const fechaFiltro = document.getElementById('filtroFecha').value;
+            if (!fechaFiltro) {
+                mostrarMensaje('⚠️ Por favor selecciona una fecha', 'error');
+                return;
+            }
+            cargarTodasTutorias(fechaFiltro);
+        }
+
+        function limpiarFiltroFecha() {
+            document.getElementById('filtroFecha').value = '';
+            cargarTodasTutorias();
+        }
+
+        // ===== CARGAR TODAS LAS TUTORIAS (COORDINADOR - SOLO GRUPALES) =====
+        function cargarTodasTutorias(fechaFiltro = null) {
+            // Cargar solo tutorías grupales
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+            const container = document.getElementById('todasTutorias');
+
+            // Aplicar filtro por fecha si existe
+            if (fechaFiltro) {
+                tutoriasGrupales = tutoriasGrupales.filter(t => t.fecha === fechaFiltro);
+                
+                if (tutoriasGrupales.length === 0) {
+                    container.innerHTML = `<p style="color: #666; text-align: center; padding: 20px; background: white; border-radius: 5px;">
+                        📅 No hay tutorías programadas para el día <strong>${fechaFiltro}</strong>
+                    </p>`;
+                    return;
+                }
+                // Mostrar encabezado con la fecha filtrada
+                container.innerHTML = `<div style="background: #75b532; color: white; padding: 12px; border-radius: 5px; margin-bottom: 15px; text-align: center; font-weight: bold;">
+                    📅 Tutorías del Día: ${fechaFiltro} (${tutoriasGrupales.length} ${tutoriasGrupales.length === 1 ? 'tutoría' : 'tutorías'})
+                </div>`;
+            } else if (tutoriasGrupales.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 40px 20px; background: white; border-radius: 8px;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📚</div>
+                    <p style="color: #666; font-size: 18px; margin-bottom: 10px; font-weight: 600;">No hay tutorías registradas en el sistema</p>
+                    <p style="color: #999; font-size: 14px;">Los tutores pueden crear tutorías grupales desde su panel</p>
+                </div>`;
+                return;
+            }
+
+            // ===== RENDERIZAR TUTORÍAS GRUPALES =====
+            const tutoriasGrupalesHTML = tutoriasGrupales.map(t => {
+                const [horaNum, minutos] = t.hora.split(':');
+                const horaInt = parseInt(horaNum);
+                let hora12 = horaInt > 12 ? horaInt - 12 : (horaInt === 0 ? 12 : horaInt);
+                const periodo = horaInt >= 12 ? 'PM' : 'AM';
+                const horaFormato = `${hora12}:${minutos} ${periodo}`;
+
+                const esCompletada = t.estado === 'completada';
+                const borderColor = esCompletada ? '#1a1a1a' : '#75b532';
+                const badgeColor = esCompletada ? '#1a1a1a' : '#75b532';
+                const badgeText = esCompletada ? '✔️ COMPLETADA' : '📖 ABIERTA';
+                
+                // Lista de estudiantes inscritos
+                let estudiantesHTML = '';
+                if (t.alumnos && t.alumnos.length > 0) {
+                    estudiantesHTML = `
+                        <div style="margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 5px;">
+                            <p style="font-weight: bold; margin-bottom: 8px; color: #1a1a1a;">📋 Estudiantes Inscritos (${t.alumnos.length}):</p>
+                            ${t.alumnos.map(alumno => {
+                                const asistenciaColor = alumno.asistencia ? '#065f46' : '#92400e';
+                                const asistenciaTexto = alumno.asistencia ? '✅ Confirmó asistencia' : '⏳ Pendiente';
+                                return `
+                                    <div style="padding: 8px; margin: 5px 0; background: white; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="color: #1a1a1a; font-size: 14px;">👨‍🎓 ${alumno.nombre}</span>
+                                        <span style="color: ${asistenciaColor}; font-size: 13px; font-weight: 600;">${asistenciaTexto}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                            <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 4px; border-left: 3px solid #75b532;">
+                                <strong>Estadísticas:</strong> ${t.alumnos.filter(a => a.asistencia).length}/${t.alumnos.length} confirmaron asistencia
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    estudiantesHTML = '<p style="color: #999; font-style: italic; margin-top: 10px;">Aún no hay estudiantes inscritos</p>';
+                }
+
+                return `
+                    <div style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid ${borderColor};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong style="font-size: 18px;">${t.tema}</strong>
+                            <span style="background: ${badgeColor}; color: white; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 600;">${badgeText}</span>
+                        </div>
+                        <p><strong>👨‍🏫 Tutor:</strong> ${t.tutorNombre} - ${t.tutorMateria}</p>
+                        <p><strong>🎓 Carrera:</strong> ${t.carrera}</p>
+                        <p><strong>📖 Curso:</strong> ${t.curso}° Semestre | <strong>Paralelo:</strong> ${t.paralelo}</p>
+                        <p><strong>📅 Fecha:</strong> ${t.fecha} <strong>⏰ Hora:</strong> ${horaFormato}</p>
+                        ${t.observaciones ? `<p><strong>📝 Observaciones:</strong> ${t.observaciones}</p>` : ''}
+                        ${estudiantesHTML}
+                    </div>
+                `;
+            }).join('');
+
+            // Renderizar en el contenedor
+            if (fechaFiltro) {
+                container.innerHTML += tutoriasGrupalesHTML;
+            } else {
+                container.innerHTML = tutoriasGrupalesHTML;
+            }
+        }
+
+        // ===== FUNCIÓN PARA MOSTRAR EQUIVALENTE DE HORA EN FORMULARIO GRUPAL =====
+        function mostrarEquivalenteHoraGrupal() {
+            const inputHora = document.getElementById('grupalHora').value;
+            const equivalenteDiv = document.getElementById('equivalenteHoraGrupal');
+            
+            if (!inputHora) {
+                equivalenteDiv.style.display = 'none';
+                return;
+            }
+            
+            const [hora, minutos] = inputHora.split(':');
+            const horaNum = parseInt(hora);
+            
+            let hora12, periodo, momento;
+            
+            // Convertir a formato 12h
+            if (horaNum === 0) {
+                hora12 = 12;
+                periodo = 'AM';
+                momento = '🌙 Medianoche';
+            } else if (horaNum < 12) {
+                hora12 = horaNum;
+                periodo = 'AM';
+                momento = '🌅 Mañana';
+            } else if (horaNum === 12) {
+                hora12 = 12;
+                periodo = 'PM';
+                momento = '☀️ Mediodía';
+            } else {
+                hora12 = horaNum - 12;
+                periodo = 'PM';
+                if (horaNum < 19) {
+                    momento = '🌤️ Tarde';
+                } else {
+                    momento = '🌙 Noche';
+                }
+            }
+            
+            // Mostrar equivalente
+            equivalenteDiv.style.display = 'block';
+            equivalenteDiv.querySelector('small').textContent = 
+                `✓ ${hora12}:${minutos} ${periodo} (${momento})`;
+        }
+
+        // ===== CREAR TUTORÍA GRUPAL (TUTOR) =====
+        function crearTutoriaGrupal() {
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            const tema = document.getElementById('grupalTema').value.trim();
+            const carrera = document.getElementById('grupalCarrera').value;
+            const curso = document.getElementById('grupalCurso').value;
+            const paralelo = document.getElementById('grupalParalelo').value;
+            const fecha = document.getElementById('grupalFecha').value;
+            const hora = document.getElementById('grupalHora').value;
+            const observaciones = document.getElementById('grupalObservaciones').value.trim();
+
+            // Validar campos requeridos
+            if (!tema || !carrera || !curso || !paralelo || !fecha || !hora) {
+                mostrarMensaje('❌ Por favor completa todos los campos obligatorios', 'error');
+                return;
+            }
+
+            // Validar fecha no sea pasada
+            const fechaSeleccionada = new Date(fecha + 'T00:00:00');
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            
+            if (fechaSeleccionada < hoy) {
+                mostrarMensaje('❌ No puedes crear tutorías con fechas pasadas', 'error');
+                return;
+            }
+
+            // Crear tutoría grupal
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+            
+            const nuevaTutoriaGrupal = {
+                id: Date.now(),
+                tutorEmail: sesion.email,
+                tutorNombre: sesion.nombre,
+                tutorMateria: sesion.materia || 'No especificada',
+                tema: tema,
+                carrera: carrera,
+                curso: curso,
+                paralelo: paralelo,
+                fecha: fecha,
+                hora: hora,
+                observaciones: observaciones,
+                alumnos: [], // Lista de alumnos inscritos: [{email, nombre, asistencia: false}]
+                estado: 'abierta', // abierta, cerrada, completada
+                fechaCreacion: new Date().toISOString()
+            };
+
+            tutoriasGrupales.push(nuevaTutoriaGrupal);
+            localStorage.setItem('tutoriasGrupales', JSON.stringify(tutoriasGrupales));
+
+            mostrarMensaje('✅ Tutoría grupal creada exitosamente', 'success');
+            document.getElementById('crearTutoriaGrupalForm').reset();
+            cargarTutoriasTutor(sesion.email);
+        }
+
+        // ===== CARGAR TUTORÍAS DISPONIBLES PARA ALUMNO =====
+        function cargarTutoriasDisponibles(emailAlumno) {
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+            
+            // Filtrar tutorías que coincidan con carrera, curso y paralelo del alumno
+            const tutoriasDisponibles = tutoriasGrupales.filter(t => 
+                t.estado === 'abierta' &&
+                t.carrera === sesion.carrera &&
+                t.curso === sesion.curso &&
+                t.paralelo === sesion.paralelo &&
+                !t.alumnos.find(a => a.email === emailAlumno) // No está inscrito ya
+            );
+
+            const container = document.getElementById('tutoriasDisponibles');
+
+            if (tutoriasDisponibles.length === 0) {
+                container.innerHTML = `<p style="color: #666; text-align: center; padding: 20px;">
+                    No hay tutorías grupales disponibles para tu curso en este momento
+                </p>`;
+                return;
+            }
+
+            container.innerHTML = tutoriasDisponibles.map(t => {
+                const [horaNum, minutos] = t.hora.split(':');
+                const horaInt = parseInt(horaNum);
+                let hora12 = horaInt > 12 ? horaInt - 12 : (horaInt === 0 ? 12 : horaInt);
+                const periodo = horaInt >= 12 ? 'PM' : 'AM';
+                const horaFormato = `${hora12}:${minutos} ${periodo}`;
+
+                return `
+                    <div style="background: white; padding: 20px; margin-bottom: 15px; border-radius: 10px; border-left: 5px solid #75b532; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                            <h5 style="margin: 0; color: #1a1a1a; font-size: 18px; font-weight: 600;">${t.tema}</h5>
+                            <span style="background: #75b532; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">DISPONIBLE</span>
+                        </div>
+                        <div style="color: #666; font-size: 14px; line-height: 1.8;">
+                            <div><strong>👨‍🏫 Tutor:</strong> ${t.tutorNombre}</div>
+                            <div><strong>📚 Materia:</strong> ${t.tutorMateria}</div>
+                            <div><strong>🎓 Carrera:</strong> ${t.carrera}</div>
+                            <div><strong>📖 Curso:</strong> ${t.curso}° Semestre | <strong>Paralelo:</strong> ${t.paralelo}</div>
+                            <div><strong>📅 Fecha:</strong> ${t.fecha} | <strong>🕐 Hora:</strong> ${horaFormato}</div>
+                            ${t.observaciones ? `<div><strong>📝 Observaciones:</strong> ${t.observaciones}</div>` : ''}
+                            <div><strong>👥 Inscritos:</strong> ${t.alumnos.length} estudiantes</div>
+                        </div>
+                        <button onclick="inscribirseEnTutoria(${t.id})" style="margin-top: 15px; background: linear-gradient(135deg, #75b532 0%, #5a9428 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; transition: all 0.3s;">
+                            ✅ Inscribirme en esta Tutoría
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== INSCRIBIRSE EN TUTORÍA GRUPAL =====
+        function inscribirseEnTutoria(tutoriaId) {
+            const sesion = JSON.parse(localStorage.getItem('sesion'));
+            let tutoriasGrupales = JSON.parse(localStorage.getItem('tutoriasGrupales') || '[]');
+            
+            const tutoria = tutoriasGrupales.find(t => t.id === tutoriaId);
+            
+            if (!tutoria) {
+                mostrarMensaje('❌ Tutoría no encontrada', 'error');
+                return;
+            }
+
+            // Verificar si ya está inscrito
+            if (tutoria.alumnos.find(a => a.email === sesion.email)) {
+                mostrarMensaje('⚠️ Ya estás inscrito en esta tutoría', 'error');
+                return;
+            }
+
+            // Agregar alumno a la lista
+            tutoria.alumnos.push({
+                email: sesion.email,
+                nombre: sesion.nombre,
+                asistencia: false,
+                fechaInscripcion: new Date().toISOString()
+            });
+
+            localStorage.setItem('tutoriasGrupales', JSON.stringify(tutoriasGrupales));
+            
+            mostrarMensaje('✅ Te has inscrito exitosamente en la tutoría', 'success');
+            cargarTutoriasDisponibles(sesion.email);
+            cargarMisTutorias(sesion.email);
+        }
+
+        // ============================================
+        // SECCIÓN 8: INICIALIZACIÓN DEL SISTEMA
+        // (Se ejecuta al cargar la página)
+        // ============================================
+
+        // ===== VERIFICAR SESION AL CARGAR =====
+        window.onload = function() {
+            // Crear coordinador por defecto si no existe
+            let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            if (!usuarios.find(u => u.email === 'coordinador@live.uleam.edu.ec')) {
+                usuarios.push({
+                    nombre: 'Coordinador Principal',
+                    email: 'coordinador@live.uleam.edu.ec',
+                    password: 'admin123',
+                    rol: 'coordinador'
+                });
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                console.log('✅ Usuario coordinador creado: coordinador@live.uleam.edu.ec / admin123');
+            }
+
+            const sesion = localStorage.getItem('sesion');
+            if (sesion) {
+                const usuario = JSON.parse(sesion);
+                mostrarDashboard(usuario);
+            }
+        };
+
+        // ============================================
+        // FIN DE LA SECCIÓN JAVASCRIPT
+        // ============================================
+    </script>
+    <!-- ============================================ -->
+    <!-- FIN DEL DOCUMENTO                            -->
+    <!-- ============================================ -->
+</body>
+</html>
